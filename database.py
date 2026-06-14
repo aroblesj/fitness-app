@@ -1,5 +1,3 @@
-from xxlimited import Str
-
 from sqlalchemy import DateTime, create_engine, Column, Integer, String, Float, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base
 from datetime import datetime, timezone
