@@ -60,7 +60,7 @@ def  get_calculated_macros(user_id: int, goal: str, db: Session = Depends(get_db
         )
 
         calculated_strategy = engine.generate_macros(goal=goal.lower())
-        return calculated_strategy
+        return {key: round(value, 2) for key, value in calculated_strategy.items()}
     
     except BiometricInputError as error:
         raise HTTPException(status_code=400, detail=error.message)

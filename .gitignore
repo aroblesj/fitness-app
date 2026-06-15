@@ -7,4 +7,4 @@ venv/
 .venv/
 UI/
 *.pdf
-*.db
+database.db
