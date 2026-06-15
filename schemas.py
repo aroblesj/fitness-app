@@ -5,7 +5,7 @@ class BiometricBase(BaseModel):
     height_cm: float
     age: int
     sex: str
-    activiti_level: str
+    activity_level: str
     body_fat: float | None = None
 
 class BiometricCreate(BiometricBase):
