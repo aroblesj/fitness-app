@@ -10,8 +10,8 @@ class BiometricInputError(NutritionError):
 
 class UserBiometrics():
     age: int
-    weight : int
-    height: int
+    weight_kg : int
+    height_cm: int
     sex : str
     activity_level : str
     body_fat: float
@@ -24,23 +24,23 @@ class UserBiometrics():
         'extreme_active': 1.900
     }
 
-    def __init__(self, age: int, weight: int, height: int, sex: str, activity_level: str, body_fat = None): 
-        self.verify_user_biometrics(age, weight, height, sex, activity_level, body_fat)
+    def __init__(self, age: int, weight_kg: int, height_cm: int, sex: str, activity_level: str, body_fat = None): 
+        self.verify_user_biometrics(age, weight_kg, height_cm, sex, activity_level, body_fat)
         
         self.age = age
-        self.weight = weight
-        self.height = height
+        self.weight_kg = weight_kg
+        self.height_cm = height_cm
         self.sex = sex
         self.activity_level = activity_level
         self.body_fat = body_fat
     
-    def verify_user_biometrics(self, age, weight, height, sex, activity_level, body_fat):
+    def verify_user_biometrics(self, age, weight_kg, height_cm, sex, activity_level, body_fat):
         if age < 18 or age > 80:
             raise BiometricInputError('age', age)
-        if weight < 22 or weight > 226:
-            raise BiometricInputError('weight', weight)
-        if height < 91 or height > 243:
-            raise BiometricInputError('height', height)
+        if weight_kg < 22 or weight_kg > 226:
+            raise BiometricInputError('weight', weight_kg)
+        if height_cm < 91 or height_cm > 243:
+            raise BiometricInputError('height', height_cm)
         if sex != 'Male' and sex != "Female":
             raise BiometricInputError('sex', sex)
         if activity_level not in UserBiometrics.ACTIVITY_MULTIPLIERS.keys():
@@ -52,15 +52,15 @@ class UserBiometrics():
     def calculate_bmr(self):
         #The Mifflin-St Jeor Formula
         if self.body_fat == None:
-            bmr = (10 * self.weight) + (6.25 * self.height) - (5 * self.age)
+            bmr = (10 * self.weight_kg) + (6.25 * self.height_cm) - (5 * self.age)
             if self.sex == "Male":
                 bmr += 5
             else:
                 bmr -= 161
          #The Katch-McArdle Formula       
         else:
-            fat_mass = self.weight * self.body_fat
-            lean_body_mass = self.weight - fat_mass
+            fat_mass = self.weight_kg * self.body_fat
+            lean_body_mass = self.weight_kg - fat_mass
 
             bmr = 370 + (21.6  * lean_body_mass)
 
@@ -78,17 +78,17 @@ class UserBiometrics():
         match goal:
             case 'maintain':
                 target_calories = tdee
-                protein_grams = self.weight * 2.2
+                protein_grams = self.weight_kg * 2.2
                 fat_grams = (target_calories * 0.25) / 9
                 carb_grams = (target_calories - (protein_grams + fat_grams)) / 4
             case 'bulk':
                 target_calories = tdee + 350
-                protein_grams = self.weight * 2.2
+                protein_grams = self.weight_kg * 2.2
                 fat_grams = (target_calories * 0.25) / 9
                 carb_grams = (target_calories - (protein_grams + fat_grams)) / 4              
             case 'cut':
                 target_calories = tdee - 500
-                protein_grams = self.weight * 2.2
+                protein_grams = self.weight_kg * 2.2
                 fat_grams = (target_calories * 0.25) / 9
                 carb_grams = (target_calories - (protein_grams + fat_grams)) / 4
             case _:

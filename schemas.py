@@ -18,17 +18,19 @@ class BiometricResponse(BiometricBase):
     class Config:
         from_attributes = True
 
-class StrengthBase(BaseModel):
+class StrengthCreate(BaseModel):
     exercise: str
-    estimated_1rm: float
-    strength_curve: dict
+    weight_lifted: float
+    reps: int
 
-class StrengthCreate(StrengthBase):
-    pass
-
-class StrengthResponse(StrengthBase):
+class StrengthResponse(BaseModel):
     id: int
     user_id: int
+    exercise: str
+    weight_lifted: float
+    reps: int
+    estimated_1rm: float
+    strength_curve: dict
 
     class Config:
         from_attributes = True
