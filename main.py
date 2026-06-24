@@ -1,13 +1,23 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from datetime import datetime, timezone
 import database
 import crud
 import schemas
 from nutrition_engine import UserBiometrics, BiometricInputError
 from strength_engine import StrengthAnalytics, StrengthInputError
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="Fitness & Nutrition API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db():
     db = database.SessionLocal()
@@ -74,8 +84,8 @@ def  get_calculated_macros(user_id: int, goal: str, db: Session = Depends(get_db
     try:
         engine = UserBiometrics(
             age=db_biometrics.age,
-            weight=int(db_biometrics.weight_kg),
-            height=int(db_biometrics.height_cm),
+            weight_kg=int(db_biometrics.weight_kg),
+            height_cm=int(db_biometrics.height_cm),
             sex=db_biometrics.sex.capitalize(),
             activity_level=db_biometrics.activity_level,
             body_fat=db_biometrics.body_fat
@@ -189,4 +199,52 @@ def delete_todo_item(user_id: int, todo_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Todo item not found for this user.")
     return {"message": "Todo item deleted successfully."}
+
+@app.get("/users/{user_id}/calendar/activity", response_model=dict[str, schemas.CalendarActivityDay])
+def get_calendar_activity(
+    user_id: int,
+    year: int,
+    month: int,
+    db: Session = Depends(get_db)
+):
+    if month < 1 or month > 12:
+        raise HTTPException(status_code=400, detail="Month must be between 1 and 12.")
+
+    try:
+        start_date = datetime(year, month, 1, tzinfo=timezone.utc)
+        if month == 12:
+            end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+        else:
+            end_date = datetime(year, month + 1, 1, tzinfo=timezone.utc)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    lifts = db.query(database.StrengthModel).filter(
+        database.StrengthModel.user_id == user_id,
+        database.StrengthModel.timestamp >= start_date,
+        database.StrengthModel.timestamp < end_date
+    ).all()
+
+    biometrics = db.query(database.BiometricModel).filter(
+        database.BiometricModel.user_id == user_id,
+        database.BiometricModel.timestamp >= start_date,
+        database.BiometricModel.timestamp < end_date
+    ).all()
+
+    activity = {}
+
+    def get_or_create_day(date_str):
+        if date_str not in activity:
+            activity[date_str] = {"lift": False, "biometrics": False}
+        return activity[date_str]
+
+    for lift in lifts:
+        date_str = lift.timestamp.strftime("%Y-%m-%d")
+        get_or_create_day(date_str)["lift"] = True
+
+    for bio in biometrics:
+        date_str = bio.timestamp.strftime("%Y-%m-%d")
+        get_or_create_day(date_str)["biometrics"] = True
+
+    return activity
 

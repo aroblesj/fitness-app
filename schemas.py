@@ -39,6 +39,7 @@ class StrengthResponse(BaseModel):
 class TodoBase(BaseModel):
     title: str
     completed: bool = False
+    position: int = 0
 
 class TodoCreate(TodoBase):
     pass
@@ -46,6 +47,7 @@ class TodoCreate(TodoBase):
 class TodoUpdate(BaseModel):
     title: str | None = None
     completed: bool | None = None
+    position: int | None = None
 
 class TodoResponse(TodoBase):
     id: int
@@ -54,3 +56,7 @@ class TodoResponse(TodoBase):
 
     class Config:
         from_attributes = True
+
+class CalendarActivityDay(BaseModel):
+    lift: bool
+    biometrics: bool

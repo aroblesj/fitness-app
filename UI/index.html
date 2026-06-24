@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recomped | Fitness and Nutrition Lab</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 stroke=%22%232563eb%22 stroke-width=%222.5%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><line x1=%221%22 y1=%2212%22 x2=%2223%22 y2=%2212%22></line><rect x=%222%22 y=%228%22 width=%222%22 height=%228%22 rx=%220.5%22 fill=%22%232563eb%22></rect><rect x=%224.5%22 y=%225%22 width=%222%22 height=%2214%22 rx=%220.5%22 fill=%22%232563eb%22></rect><rect x=%2217.5%22 y=%225%22 width=%222%22 height=%2214%22 rx=%220.5%22 fill=%22%232563eb%22></rect><rect x=%2220%22 y=%228%22 width=%222%22 height=%228%22 rx=%220.5%22 fill=%22%232563eb%22></rect></svg>">
+  <!-- Google Fonts - Inter and Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css?v=10">
+  <!-- Chart.js CDN for interactive charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="12" x2="23" y2="12"></line><rect x="2" y="8" width="2" height="8" rx="0.5" fill="currentColor"></rect><rect x="4.5" y="5" width="2" height="14" rx="0.5" fill="currentColor"></rect><rect x="17.5" y="5" width="2" height="14" rx="0.5" fill="currentColor"></rect><rect x="20" y="8" width="2" height="8" rx="0.5" fill="currentColor"></rect></svg>
+        </div>
+        <span class="logo-text">RECOMPED</span>
+      </div>
+
+      <div class="header-right">
+        <div class="user-profile" id="user-profile-btn">
+          <div class="profile-info">
+            <span class="profile-name" id="profile-name">arobles</span>
+            <span class="profile-role" id="profile-role" style="display: none;"></span>
+          </div>
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          
+          <!-- Dropdown Menu -->
+          <div class="profile-dropdown" id="profile-dropdown">
+            <a href="#" class="dropdown-item">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              Basic Settings
+            </a>
+            <hr class="dropdown-divider">
+            <a href="#" class="dropdown-item logout" id="logout-btn">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+              Logout
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <main class="dashboard-grid">
+      
+      <!-- COLUMN 1: Calendar & Schedule -->
+      <section class="grid-column col-calendar">
+        <!-- Main Calendar Widget -->
+        <div class="bento-card calendar-card">
+          <div class="card-header">
+            <h2 class="card-title">Training Schedule</h2>
+            <div class="calendar-nav">
+              <button class="nav-btn" id="prev-month">&larr;</button>
+              <span class="current-month-label" id="month-year-display">June 2026</span>
+              <button class="nav-btn" id="next-month">&rarr;</button>
+            </div>
+          </div>
+          
+          <div class="calendar-body">
+            <div class="weekdays-grid">
+              <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+            </div>
+            <div class="days-grid" id="calendar-days-container">
+              <!-- JS will inject calendar days here dynamically -->
+            </div>
+          </div>
+
+          <div class="calendar-legend">
+            <div class="legend-item"><span class="dot dot-strength"></span>Strength</div>
+            <div class="legend-item"><span class="dot dot-nutrition"></span>Cardio</div>
+            <div class="legend-item"><span class="dot dot-rest"></span>Rest Day</div>
+          </div>
+        </div>
+
+        <!-- To-Do List Panel -->
+        <div class="bento-card agenda-card">
+          <div class="card-header">
+            <h2 class="card-title">To-Do List</h2>
+            <span class="agenda-date" id="todo-count">0 / 20 items</span>
+          </div>
+          
+          <div class="agenda-content">
+            <!-- Scrollable list of items -->
+            <div class="todo-list-scroll" style="max-height: 480px; overflow-y: auto;">
+              <ul class="agenda-checklist" id="todo-list-container" style="list-style: none; display: flex; flex-direction: column; gap: 4px;">
+                <!-- Javascript will inject list items dynamically -->
+              </ul>
+            </div>
+
+            <!-- Add Todo Form at the bottom -->
+            <div class="todo-add-form" id="todo-add-form" style="display: flex; gap: 8px; margin-top: auto; padding-top: 12px; align-items: center;">
+              <input type="text" id="todo-input" class="custom-input" placeholder="Add a new task..." style="flex: 1; padding: 6px 10px; font-size: 13px;">
+              <button id="btn-add-todo" class="todo-add-btn" title="Add Item">+</button>
+              
+              <!-- Global todo kebab container -->
+              <div class="global-todo-kebab-container" style="position: relative; flex-shrink: 0;">
+                <button id="btn-global-todo-kebab" class="btn-kebab" title="Options">⋮</button>
+                <div id="global-todo-dropdown" class="kebab-dropdown">
+                  <button id="btn-clear-all-todos" class="kebab-dropdown-item" style="color: var(--accent-coral);">Clear All</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Accept button for reordering mode -->
+            <div id="todo-reorder-actions" style="display: none; margin-top: 12px;">
+              <button id="btn-accept-reorder" class="btn-primary" style="width: 100%;">Accept New Order</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUMN 2: Analytics & Metrics Engine -->
+      <section class="grid-column col-analytics">
+        
+        <!-- Biometrics & Nutrition Controls -->
+        <div class="bento-card biometrics-card loading-container">
+          <div class="loading-overlay" id="biometrics-loading-overlay"><div class="spinner"></div></div>
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="unit-selector">
+              <button class="unit-btn active" data-unit="imperial">Imperial</button>
+              <button class="unit-btn" data-unit="metric">Metric</button>
+            </div>
+            <h2 class="card-title" style="margin: 0; text-align: center; flex-grow: 1;">Body Statistics</h2>
+            <div class="goal-selector">
+              <button class="goal-btn active" data-goal="cut">Cut</button>
+              <button class="goal-btn" data-goal="maintain">Maintain</button>
+              <button class="goal-btn" data-goal="bulk">Bulk</button>
+            </div>
+          </div>
+          
+          <div class="biometrics-grid">
+            <div class="biometrics-inputs-row">
+              <div class="input-wrapper">
+                <label for="input-weight" id="weight-label">Weight (lbs)</label>
+                <input type="number" id="input-weight" class="custom-input" min="80" max="400" value="190">
+              </div>
+              <div class="input-wrapper">
+                <label id="height-label">Height</label>
+                <div class="height-inputs" id="height-imperial-wrapper">
+                  <input type="number" id="input-height-ft" class="custom-input height-ft" min="3" max="8" value="5">
+                  <span class="height-unit">ft</span>
+                  <input type="number" id="input-height-in" class="custom-input height-in" min="0" max="11" value="9">
+                  <span class="height-unit">in</span>
+                </div>
+                <div class="height-inputs" id="height-metric-wrapper" style="display: none;">
+                  <input type="number" id="input-height-cm" class="custom-input" min="91" max="243" value="175">
+                  <span class="height-unit">cm</span>
+                </div>
+              </div>
+              <div class="input-wrapper">
+                <label for="input-fat">Body Fat (%)</label>
+                <input type="number" id="input-fat" class="custom-input" min="3" max="50" value="18">
+              </div>
+            </div>
+
+            <div class="biometrics-row">
+              <div class="select-wrapper">
+                <label for="select-sex">Sex</label>
+                <select id="select-sex" class="custom-select">
+                  <option value="Male" selected>Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+
+              <div class="select-wrapper">
+                <label for="select-activity">Activity Level</label>
+                <select id="select-activity" class="custom-select">
+                  <option value="sedentary">Sedentary (1.2x)</option>
+                  <option value="lightly_active" selected>Lightly Active (1.375x)</option>
+                  <option value="moderate_active">Moderately Active (1.55x)</option>
+                  <option value="highly_active">Highly Active (1.725x)</option>
+                  <option value="extreme_active">Extremely Active (1.9x)</option>
+                </select>
+              </div>
+            </div>
+            
+            <button id="btn-update-biometrics" class="btn-primary">Update Metrics</button>
+          </div>
+        </div>
+
+        <!-- Macronutrients & Energy Targets -->
+        <div class="bento-card nutrition-card loading-container">
+          <div class="loading-overlay" id="nutrition-loading-overlay"><div class="spinner"></div></div>
+          <div class="nutrition-content">
+            <div class="calorie-progress-wrapper">
+              <div class="calorie-ring-container">
+                <svg viewBox="0 0 100 100" class="progress-ring-svg">
+                  <circle class="ring-bg" cx="50" cy="50" r="44"></circle>
+                  <circle class="ring-progress" id="calorie-progress-bar" cx="50" cy="50" r="44" stroke-dasharray="276.46" stroke-dashoffset="80"></circle>
+                </svg>
+                <div class="calorie-text">
+                  <span class="calories-amount" id="num-calories">1,940</span>
+                  <span class="calories-unit">Target kcal</span>
+                </div>
+              </div>
+              <div class="metabolic-stats">
+                <div class="meta-stat">
+                  <span class="meta-label">BMR Baseline</span>
+                  <span class="meta-value" id="val-bmr">1,735 kcal</span>
+                </div>
+                <div class="meta-stat">
+                  <span class="meta-label">Total TDEE</span>
+                  <span class="meta-value" id="val-tdee">2,385 kcal</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="macro-sliders-container">
+              <h3 class="subsection-title">Macronutrient Target Distribution</h3>
+              
+              <div class="macro-bar-group">
+                <div class="macro-label">
+                  <span class="macro-name color-protein">Protein</span>
+                  <span class="macro-stats-text"><span id="val-protein-g">171</span>g / <span id="val-protein-pct">35</span>%</span>
+                </div>
+                <div class="macro-bar-track">
+                  <div class="macro-bar-fill fill-protein" id="bar-protein" style="width: 35%"></div>
+                </div>
+              </div>
+
+              <div class="macro-bar-group">
+                <div class="macro-label">
+                  <span class="macro-name color-carbs">Carbohydrates</span>
+                  <span class="macro-stats-text"><span id="val-carbs-g">194</span>g / <span id="val-carbs-pct">40</span>%</span>
+                </div>
+                <div class="macro-bar-track">
+                  <div class="macro-bar-fill fill-carbs" id="bar-carbs" style="width: 40%"></div>
+                </div>
+              </div>
+
+              <div class="macro-bar-group">
+                <div class="macro-label">
+                  <span class="macro-name color-fats">Fats</span>
+                  <span class="macro-stats-text"><span id="val-fats-g">54</span>g / <span id="val-fats-pct">25</span>%</span>
+                </div>
+                <div class="macro-bar-track">
+                  <div class="macro-bar-fill fill-fats" id="bar-fats" style="width: 25%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strength 1RM Calculation Lab -->
+        <div class="strength-lab-wrapper">
+          <div class="bento-card 1rm-card loading-container">
+            <div class="loading-overlay" id="strength-loading-overlay"><div class="spinner"></div></div>
+            <div class="card-header">
+              <h2 class="card-title">Strength Analytics</h2>
+            </div>
+            
+            <div class="strength-form">
+              <div class="form-row">
+                <div class="input-wrapper">
+                  <label for="select-exercise">Exercise</label>
+                  <select id="select-exercise" class="custom-select">
+                    <option value="back_squat">Barbell Back Squat</option>
+                    <option value="bench_press" selected>Barbell Bench Press</option>
+                    <option value="deadlift">Barbell Conventional Deadlift</option>
+                    <option value="overhead_press">Barbell Overhead Press</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row inputs-split">
+                <div class="input-wrapper">
+                  <label for="input-lift-weight">Weight (lbs)</label>
+                  <input type="number" id="input-lift-weight" class="custom-input" min="10" max="800" value="225">
+                </div>
+                <div class="input-wrapper">
+                  <label for="input-lift-reps">Reps Logged</label>
+                  <input type="number" id="input-lift-reps" class="custom-input" min="1" max="12" value="5">
+                </div>
+              </div>
+            </div>
+
+            <div class="one-rep-max-results">
+              <div class="primary-1rm-display">
+                <span class="calc-label">Estimated 1RM</span>
+                <span class="calc-value" id="val-mean-1rm">259.7 <span class="calc-unit">lbs</span></span>
+              </div>
+              <button id="btn-log-lift" class="btn-primary" style="width: 100%; margin-top: 12px;">Log Lift</button>
+            </div>
+          </div>
+
+          <!-- Strength Curve Plotter -->
+          <div class="bento-card strength-curve-card">
+            <div class="card-header">
+              <h2 class="card-title">Predicted Strength Curve</h2>
+              <span class="subtitle-tag">Predicted reps (1-12) vs. Load</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="strengthCurveChart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Daily Tip Callout Card -->
+        <div class="daily-tip-card">
+          <div class="tip-header">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            <h4>Did You Know?</h4>
+          </div>
+          <p class="tip-body">Even a 2% drop in total body hydration can lead to a 10% decrease in peak muscular strength. Drink 500ml of water 30 minutes before your lower body workouts!</p>
+        </div>
+      </section>
+
+      <!-- COLUMN 3: Informational Resources Sidebar -->
+      <section class="grid-column col-resources">
+        <div class="bento-card resource-hub-card">
+          <div class="card-header">
+            <h2 class="card-title">Resource & Learning Hub</h2>
+          </div>
+          
+          <!-- Category Filters -->
+          <div class="resource-filters">
+            <button class="filter-tab active" data-filter="all">All</button>
+            <button class="filter-tab" data-filter="strength">Strength</button>
+            <button class="filter-tab" data-filter="nutrition">Nutrition</button>
+            <button class="filter-tab" data-filter="recovery">Recovery</button>
+          </div>
+
+          <div class="resources-scroll-container">
+            <!-- Featured Video Player Card -->
+            <div class="resource-item-card video-card" data-category="strength">
+              <div class="video-thumbnail-container">
+                <img src="https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=500&q=80" alt="Back squat execution tutorial thumbnail" class="video-thumbnail">
+                <div class="video-duration">8:45</div>
+                <div class="play-overlay-button" id="trigger-video-modal">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                </div>
+              </div>
+              <div class="resource-text">
+                <span class="resource-tag tag-video">VIDEO GUIDE</span>
+                <h3 class="resource-headline">Mastering the Low-Bar Squat: Biomechanics &amp; Hip Drive</h3>
+                <p class="resource-author">by Sarah Davis, CSCS</p>
+              </div>
+            </div>
+
+            <!-- Interactive Muscle Diagram -->
+            <div class="resource-item-card diagram-card" data-category="strength">
+              <h4 class="diagram-title">Interactive Muscle Engagement</h4>
+              <p class="diagram-subtitle">Hover over muscle groups to view primary lifts</p>
+              <div class="anatomy-svg-wrapper">
+                <!-- Inline SVG vector model representing posterior / anterior chain -->
+                <svg viewBox="0 0 200 240" class="anatomy-svg" id="muscle-svg">
+                  <!-- Head -->
+                  <circle cx="100" cy="25" r="12" fill="#E2E8F0" class="muscle-group" data-muscle="Neck"></circle>
+                  <!-- Shoulders/Traps -->
+                  <path d="M 80 40 L 120 40 L 135 55 L 115 58 L 100 48 L 85 58 L 65 55 Z" fill="#CBD5E1" class="muscle-group" data-muscle="Shoulders"></path>
+                  <!-- Chest -->
+                  <path d="M 85 58 L 100 48 L 115 58 L 115 85 L 85 85 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Chest"></path>
+                  <!-- Back / Lats -->
+                  <path d="M 80 85 L 68 62 L 85 58 L 100 70 L 115 58 L 132 62 L 120 85 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Lats"></path>
+                  <!-- Core / Abs -->
+                  <rect x="86" y="88" width="28" height="32" rx="4" fill="#CBD5E1" class="muscle-group" data-muscle="Abs"></rect>
+                  <!-- Quads / Thighs -->
+                  <path d="M 72 135 L 97 135 L 97 185 L 75 185 Z" fill="#94A3B8" class="muscle-group active-muscle" data-muscle="Quads"></path>
+                  <path d="M 103 135 L 128 135 L 125 185 L 103 185 Z" fill="#94A3B8" class="muscle-group active-muscle" data-muscle="Quads"></path>
+                  <!-- Hamstrings / Glutes (Posterior representations) -->
+                  <path d="M 70 120 H 130 V 134 H 70 Z" fill="#CBD5E1" class="muscle-group" data-muscle="Glutes"></path>
+                  <!-- Calves -->
+                  <path d="M 76 195 L 95 195 L 90 230 L 80 230 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Calves"></path>
+                  <path d="M 105 195 L 124 195 L 120 230 L 110 230 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Calves"></path>
+                </svg>
+                <div class="anatomy-overlay" id="anatomy-overlay-text">
+                  Hover on highlight: <span class="highlighted-muscle">Quads</span>
+                  <div class="primary-exercise">Targeted by: Back Squat</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Articles Feed -->
+            <div class="resource-item-card article-card" data-category="strength">
+              <div class="article-details">
+                <span class="resource-tag tag-article">ARTICLE</span>
+                <h3 class="resource-headline">The Science of Hypertrophy: Optimal Rep Ranges Explained</h3>
+                <span class="article-meta">5 min read • By Dr. Michael Chen</span>
+              </div>
+              <button class="bookmark-btn">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+              </button>
+            </div>
+
+            <div class="resource-item-card article-card" data-category="nutrition">
+              <div class="article-details">
+                <span class="resource-tag tag-article">ARTICLE</span>
+                <h3 class="resource-headline">Anabolic Window: Fact vs. Fiction in Nutrient Timing</h3>
+                <span class="article-meta">4 min read • By Alan Aragon, MS</span>
+              </div>
+              <button class="bookmark-btn bookmarked">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+              </button>
+            </div>
+
+            <div class="resource-item-card article-card" data-category="recovery">
+              <div class="article-details">
+                <span class="resource-tag tag-article">ARTICLE</span>
+                <h3 class="resource-headline">Sleep Deprivation and Muscle Growth: The Cortisol Link</h3>
+                <span class="article-meta">6 min read • By Brad Schoenfeld, PhD</span>
+              </div>
+              <button class="bookmark-btn">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+              </button>
+            </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Mock Video Player Modal Overlay -->
+  <div class="modal-overlay" id="video-modal">
+    <div class="modal-content">
+      <button class="close-modal-btn" id="close-modal">&times;</button>
+      <div class="video-container">
+        <!-- Mock visual representing a playing video with overlay controls -->
+        <div class="mock-video-playing">
+          <img src="https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80" alt="Playing Video" class="modal-video-bg">
+          <div class="modal-video-controls">
+            <div class="progress-bar-mock">
+              <div class="progress-filled" style="width: 32%"></div>
+            </div>
+            <div class="controls-row">
+              <div class="left-controls">
+                <button class="video-control-btn">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                </button>
+                <span class="video-time">2:48 / 8:45</span>
+              </div>
+              <span class="video-title-mini">Mastering the Low-Bar Squat</span>
+              <div class="right-controls">
+                <button class="video-control-btn">
+                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                </button>
+                <button class="video-control-btn">
+                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Success Toast Window -->
+  <div class="logout-toast" id="logout-toast">
+    <div class="toast-content">
+      <span class="toast-message">You have successfully logged out.</span>
+      <button class="toast-close-btn" id="close-toast-btn">&times;</button>
+    </div>
+  </div>
+
+  <!-- Custom Dialog Modal -->
+  <div class="modal-overlay" id="custom-dialog-modal">
+    <div class="modal-content" style="max-width: 400px; padding: 24px; text-align: center;">
+      <h4 id="custom-dialog-title" style="margin-bottom: 12px; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-main);">Notice</h4>
+      <p id="custom-dialog-message" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; text-align: center; word-break: break-word;"></p>
+      <div class="dialog-buttons" style="display: flex; gap: 10px; justify-content: center;">
+        <button id="btn-dialog-cancel" class="filter-tab" style="padding: 8px 16px; margin: 0;">Cancel</button>
+        <button id="btn-dialog-ok" class="btn-primary" style="width: auto; padding: 8px 24px; min-width: 80px; margin: 0;">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript File -->
+  <script src="app.js?v=10"></script>
+</body>
+</html>

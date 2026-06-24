@@ -1,0 +1,1547 @@
+document.addEventListener('DOMContentLoaded', () => {
+  
+  // ==========================================
+  // STATE MANAGEMENT & CONFIGS
+  // ==========================================
+  const USER_ID = 1;
+  const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'http://127.0.0.1:8000';
+
+  let currentYear = 2026;
+  let currentMonth = 5; // June (0-indexed)
+  let activeGoal = 'cut';
+  let activeUnit = 'imperial';
+  let activeMuscleGroup = 'Quads';
+  let strengthCurveChart = null;
+  let isLoggedIn = true;
+  let logoutTimeout = null;
+
+  // To-Do List State
+  let todoItems = [];
+  let isReorderMode = false;
+  let draggedIndex = null;
+
+  // Cache original HTML structures to restore them upon logging back in
+  const originalCardContents = {
+    calendarBody: document.querySelector('.calendar-body').innerHTML,
+    calendarLegend: document.querySelector('.calendar-legend').innerHTML,
+    agendaContent: document.querySelector('.agenda-content').innerHTML,
+    biometricsGrid: document.querySelector('.biometrics-grid').innerHTML,
+    nutritionContent: document.querySelector('.nutrition-content').innerHTML,
+    strengthForm: document.querySelector('.strength-form').innerHTML,
+    strengthResults: document.querySelector('.one-rep-max-results').innerHTML,
+    strengthCurveCard: document.querySelector('.strength-curve-card').innerHTML
+  };
+
+  // Static workout schedule to populate dots in June 2026
+  const trainingSchedule = {
+    strengthDays: [1, 3, 5],
+    nutritionDays: [1, 2, 3, 5, 6],
+    restDays: [0, 4]
+  };
+
+  // Exercise definitions for anatomy hover
+  const muscleExercises = {
+    'Chest': { exercise: 'Barbell Bench Press', muscle: 'Pectoralis Major' },
+    'Quads': { exercise: 'Barbell Back Squat', muscle: 'Quadriceps Femoris' },
+    'Lats': { exercise: 'Barbell Conventional Deadlift', muscle: 'Latissimus Dorsi' },
+    'Shoulders': { exercise: 'Barbell Overhead Press', muscle: 'Deltoids' },
+    'Abs': { exercise: 'Hanging Knee Raise', muscle: 'Rectus Abdominis' },
+    'Glutes': { exercise: 'Barbell Hip Thrust', muscle: 'Gluteus Maximus' },
+    'Calves': { exercise: 'Standing Calf Raise', muscle: 'Gastrocnemius' },
+    'Neck': { exercise: 'Neck Flexion', muscle: 'Trapezius' }
+  };
+
+  const ACTIVITY_MULTIPLIERS = {
+    sedentary: 1.200,
+    lightly_active: 1.375,
+    moderate_active: 1.550,
+    highly_active: 1.725,
+    extreme_active: 1.900
+  };
+
+  // Local Resource Hub Data Store (designed to match GET /resources/)
+  const localResourceDatabase = [
+    {
+      id: 1,
+      type: 'video',
+      category: 'strength',
+      title: 'Mastering the Low-Bar Squat: Biomechanics & Hip Drive',
+      author: 'Sarah Davis, CSCS',
+      duration: '8:45',
+      thumbnail: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=500&q=80',
+      bookmarked: false
+    },
+    {
+      id: 2,
+      type: 'article',
+      category: 'strength',
+      title: 'The Science of Hypertrophy: Optimal Rep Ranges Explained',
+      author: 'Dr. Michael Chen',
+      readTime: '5 min read',
+      bookmarked: false
+    },
+    {
+      id: 3,
+      type: 'article',
+      category: 'nutrition',
+      title: 'Anabolic Window: Fact vs. Fiction in Nutrient Timing',
+      author: 'Alan Aragon, MS',
+      readTime: '4 min read',
+      bookmarked: true
+    },
+    {
+      id: 4,
+      type: 'article',
+      category: 'recovery',
+      title: 'Sleep Deprivation and Muscle Growth: The Cortisol Link',
+      author: 'Brad Schoenfeld, PhD',
+      readTime: '6 min read',
+      bookmarked: false
+    }
+  ];
+
+  // ==========================================
+  // PROFILE MENU INTERACTION & GUEST TOGGLES
+  // ==========================================
+  const userProfileBtn = document.getElementById('user-profile-btn');
+  const profileDropdown = document.getElementById('profile-dropdown');
+  const profilePic = document.getElementById('profile-pic');
+  const profileName = document.getElementById('profile-name');
+  const profileRole = document.getElementById('profile-role');
+  const logoutToast = document.getElementById('logout-toast');
+  const closeToastBtn = document.getElementById('close-toast-btn');
+
+  userProfileBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    userProfileBtn.classList.toggle('active');
+    profileDropdown.classList.toggle('show');
+  });
+
+  document.addEventListener('click', () => {
+    userProfileBtn.classList.remove('active');
+    profileDropdown.classList.remove('show');
+  });
+
+  function setupProfileDropdown() {
+    if (isLoggedIn) {
+      profileDropdown.innerHTML = `
+        <a href="#" class="dropdown-item" id="settings-btn">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Basic Settings
+        </a>
+        <hr class="dropdown-divider">
+        <a href="#" class="dropdown-item logout" id="logout-btn">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Logout
+        </a>
+      `;
+      document.getElementById('logout-btn').addEventListener('click', handleLogout);
+      document.getElementById('settings-btn').addEventListener('click', handleSettings);
+    } else {
+      profileDropdown.innerHTML = `
+        <a href="#" class="dropdown-item login" id="login-btn">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+          Login
+        </a>
+      `;
+      document.getElementById('login-btn').addEventListener('click', handleLogin);
+    }
+  }
+
+  function handleLogout(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    isLoggedIn = false;
+    userProfileBtn.classList.remove('active');
+    profileDropdown.classList.remove('show');
+
+    // Trigger Success Toast
+    if (logoutToast) {
+      logoutToast.querySelector('.toast-message').textContent = 'You have successfully logged out.';
+      logoutToast.classList.add('show');
+      
+      if (logoutTimeout) clearTimeout(logoutTimeout);
+      logoutTimeout = setTimeout(() => {
+        logoutToast.classList.remove('show');
+      }, 5000);
+    }
+
+    // Refresh profile details to reflect guest mode
+    if (profilePic) {
+      profilePic.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2394a3b8"><circle cx="12" cy="8" r="4"/><path d="M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z"/></svg>';
+    }
+    if (profileName) {
+      profileName.textContent = 'Guest User';
+    }
+    if (profileRole) {
+      profileRole.textContent = 'Signed Out';
+    }
+
+    setupProfileDropdown();
+    applyGuestLockedState();
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    isLoggedIn = true;
+    userProfileBtn.classList.remove('active');
+    profileDropdown.classList.remove('show');
+
+    // Show Success Toast
+    if (logoutToast) {
+      logoutToast.querySelector('.toast-message').textContent = 'You have successfully logged in.';
+      logoutToast.classList.add('show');
+      
+      if (logoutTimeout) clearTimeout(logoutTimeout);
+      logoutTimeout = setTimeout(() => {
+        logoutToast.classList.remove('show');
+      }, 5000);
+    }
+
+    // Restore profile details
+    if (profilePic) {
+      profilePic.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2394a3b8"><circle cx="12" cy="8" r="4"/><path d="M12 14c-6.1 0-8 4-8 4v2h16v-2s-1.9-4-8-4z"/></svg>';
+    }
+    if (profileName) {
+      profileName.textContent = 'arobles';
+    }
+    if (profileRole) {
+      profileRole.textContent = '';
+    }
+
+    // Restore HTML containers
+    document.querySelector('.calendar-body').innerHTML = originalCardContents.calendarBody;
+    document.querySelector('.calendar-legend').innerHTML = originalCardContents.calendarLegend;
+    document.querySelector('.agenda-content').innerHTML = originalCardContents.agendaContent;
+    document.querySelector('.biometrics-grid').innerHTML = originalCardContents.biometricsGrid;
+    document.querySelector('.nutrition-content').innerHTML = originalCardContents.nutritionContent;
+    document.querySelector('.strength-form').innerHTML = originalCardContents.strengthForm;
+    document.querySelector('.one-rep-max-results').innerHTML = originalCardContents.strengthResults;
+    document.querySelector('.strength-curve-card').innerHTML = originalCardContents.strengthCurveCard;
+
+    strengthCurveChart = null;
+
+    setupProfileDropdown();
+    setupDashboardListeners();
+    initializeData();
+  }
+
+  function handleSettings(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    userProfileBtn.classList.remove('active');
+    profileDropdown.classList.remove('show');
+    const currentUserName = profileName ? profileName.textContent : 'arobles';
+    alert(`User Profile Settings:\n- Username: ${currentUserName}\n- User ID: ${USER_ID}\n- Platform: Recomped Labs`);
+  }
+
+  if (closeToastBtn) {
+    closeToastBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (logoutToast) logoutToast.classList.remove('show');
+      if (logoutTimeout) clearTimeout(logoutTimeout);
+    });
+  }
+
+  // ==========================================
+  // GUEST LOCKED PANEL RENDERING
+  // ==========================================
+  function applyGuestLockedState() {
+    const lockedHTML = `
+      <div class="guest-locked-state">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2" fill="none">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <p>Log in or create an account to enable this.</p>
+      </div>
+    `;
+
+    document.querySelector('.calendar-body').innerHTML = lockedHTML;
+    document.querySelector('.calendar-legend').innerHTML = '';
+    document.querySelector('.agenda-content').innerHTML = lockedHTML;
+    document.querySelector('.biometrics-grid').innerHTML = lockedHTML;
+    document.querySelector('.nutrition-content').innerHTML = lockedHTML;
+    document.querySelector('.strength-form').innerHTML = lockedHTML;
+    document.querySelector('.one-rep-max-results').innerHTML = lockedHTML;
+    document.querySelector('.strength-curve-card').innerHTML = lockedHTML;
+
+    if (strengthCurveChart) {
+      strengthCurveChart.destroy();
+      strengthCurveChart = null;
+    }
+  }
+
+  // ==========================================
+  // TO-DO LIST LOGIC & BACKEND INTEGRATION
+  // ==========================================
+  async function fetchTodosFromBackend() {
+    try {
+      const response = await fetch(`${API_BASE}/users/${USER_ID}/todo`);
+      if (response.ok) {
+        const data = await response.json();
+        // Map backend schemas (title, completed) to UI fields (text, done)
+        return data.map(item => ({
+          id: item.id,
+          text: item.title,
+          done: item.completed,
+          position: item.position
+        }));
+      }
+    } catch (e) {
+      console.error('Error fetching todos:', e);
+    }
+    return [];
+  }
+
+  async function saveTodoToBackend(todo) {
+    try {
+      const response = await fetch(`${API_BASE}/users/${USER_ID}/todo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: todo.text,
+          completed: todo.done,
+          position: todo.position
+        })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.error('Error saving todo:', e);
+    }
+    return null;
+  }
+
+  async function updateTodoOnBackend(todo) {
+    try {
+      const response = await fetch(`${API_BASE}/users/${USER_ID}/todo/${todo.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: todo.text,
+          completed: todo.done,
+          position: todo.position
+        })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.error('Error updating todo:', e);
+    }
+    return null;
+  }
+
+  async function deleteTodoFromBackend(todoId) {
+    try {
+      const response = await fetch(`${API_BASE}/users/${USER_ID}/todo/${todoId}`, {
+        method: 'DELETE'
+      });
+      return response.ok;
+    } catch (e) {
+      console.error('Error deleting todo:', e);
+    }
+    return false;
+  }
+
+  async function saveTodoOrderToBackend() {
+    try {
+      await Promise.all(todoItems.map((item, index) => {
+        item.position = index;
+        return fetch(`${API_BASE}/users/${USER_ID}/todo/${item.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            position: index
+          })
+        });
+      }));
+    } catch (e) {
+      console.error('Error saving todo order:', e);
+    }
+  }
+
+  function renderTodos() {
+    const container = document.getElementById('todo-list-container');
+    const countDisplay = document.getElementById('todo-count');
+    const reorderActions = document.getElementById('todo-reorder-actions');
+    const addForm = document.getElementById('todo-add-form');
+
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (countDisplay) {
+      countDisplay.textContent = `${todoItems.length} / 20 items`;
+    }
+
+    if (todoItems.length === 0) {
+      container.innerHTML = `
+        <li style="text-align: center; color: var(--text-light); font-size: 12px; padding: 24px 0;">
+          No items on your To-Do list yet.
+        </li>
+      `;
+      return;
+    }
+
+    todoItems.forEach((item, index) => {
+      const li = document.createElement('li');
+      li.className = `todo-item ${item.done ? 'done' : ''}`;
+      li.id = `todo-item-${item.id}`;
+      li.style.position = 'relative';
+
+      if (isReorderMode) {
+        // Render Reorder Style: Title left, Hamburger handle on the right (replaces arrows)
+        li.innerHTML = `
+          <div class="todo-item-left">
+            <span class="todo-text">${item.text}</span>
+          </div>
+          <div class="reorder-handle" style="cursor: grab; font-size: 16px; padding: 4px; user-select: none; flex-shrink: 0; color: var(--text-light);">☰</div>
+        `;
+
+        // HTML5 drag and drop handlers
+        li.draggable = true;
+
+        li.addEventListener('dragstart', (e) => {
+          draggedIndex = index;
+          e.dataTransfer.effectAllowed = 'move';
+          setTimeout(() => li.classList.add('dragging'), 0);
+        });
+
+        li.addEventListener('dragend', () => {
+          draggedIndex = null;
+          renderTodos();
+        });
+
+        li.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          const targetIndex = index;
+          if (draggedIndex !== null && draggedIndex !== targetIndex) {
+            const movedItem = todoItems[draggedIndex];
+            todoItems.splice(draggedIndex, 1);
+            todoItems.splice(targetIndex, 0, movedItem);
+            draggedIndex = targetIndex;
+            renderTodos();
+            const newDragging = document.getElementById(`todo-item-${movedItem.id}`);
+            if (newDragging) newDragging.classList.add('dragging');
+          }
+        });
+
+      } else {
+        // Render Default Style: Text Left (clickable to toggle done), Kebab Menu Right
+        li.innerHTML = `
+          <div class="todo-item-left" style="cursor: pointer; padding: 4px 0;">
+            <span class="todo-text">${item.text}</span>
+          </div>
+          <div class="kebab-menu-container">
+            <button class="btn-kebab" id="kebab-btn-${item.id}">⋮</button>
+            <div class="kebab-dropdown" id="kebab-dropdown-${item.id}">
+              <button class="kebab-dropdown-item btn-rename" data-index="${index}">Rename</button>
+              <button class="kebab-dropdown-item btn-delete" data-index="${index}">Delete</button>
+              <button class="kebab-dropdown-item btn-reorder">Reorder</button>
+            </div>
+          </div>
+        `;
+
+        // Item Text Toggle
+        li.querySelector('.todo-item-left').addEventListener('click', async () => {
+          todoItems[index].done = !todoItems[index].done;
+          await updateTodoOnBackend(todoItems[index]);
+          renderTodos();
+        });
+
+        // Dropdown Toggle
+        const kebabBtn = li.querySelector(`#kebab-btn-${item.id}`);
+        const dropdown = li.querySelector(`#kebab-dropdown-${item.id}`);
+        
+        kebabBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          document.querySelectorAll('.kebab-dropdown').forEach(d => {
+            if (d !== dropdown) d.classList.remove('show');
+          });
+          dropdown.classList.toggle('show');
+          if (dropdown.classList.contains('show')) {
+            const rect = kebabBtn.getBoundingClientRect();
+            dropdown.style.top = `${rect.bottom + 4}px`;
+            dropdown.style.left = `${rect.right - 90}px`;
+          }
+        });
+
+        // Dropdown actions
+        li.querySelector('.btn-rename').addEventListener('click', () => renameTodoInline(index));
+        li.querySelector('.btn-delete').addEventListener('click', () => deleteTodo(index));
+        li.querySelector('.btn-reorder').addEventListener('click', () => {
+          isReorderMode = true;
+          if (reorderActions) reorderActions.style.display = 'block';
+          if (addForm) addForm.style.display = 'none';
+          renderTodos();
+        });
+      }
+
+      container.appendChild(li);
+    });
+
+    // Close any open kebab dropdowns when clicking outside
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.kebab-dropdown').forEach(d => d.classList.remove('show'));
+    });
+  }
+
+  async function addNewTodo() {
+    const input = document.getElementById('todo-input');
+    if (!input) return;
+    const val = input.value.trim();
+
+    if (!val) return;
+    if (todoItems.length >= 20) {
+      await showCustomDialog('To-Do list limit reached. Delete tasks to add new ones (Maximum 20).');
+      return;
+    }
+
+    const tempTodo = {
+      text: val,
+      done: false,
+      position: todoItems.length
+    };
+
+    const saved = await saveTodoToBackend(tempTodo);
+    if (saved) {
+      todoItems.push({
+        id: saved.id,
+        text: saved.title,
+        done: saved.completed,
+        position: saved.position
+      });
+      input.value = '';
+      renderTodos();
+    }
+  }
+
+  async function deleteTodo(index) {
+    const item = todoItems[index];
+    const success = await deleteTodoFromBackend(item.id);
+    if (success) {
+      todoItems.splice(index, 1);
+      renderTodos();
+    }
+  }
+
+  function renameTodoInline(index) {
+    const li = document.getElementById(`todo-item-${todoItems[index].id}`);
+    if (!li) return;
+
+    const textSpan = li.querySelector('.todo-text');
+    const originalText = todoItems[index].text;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'custom-input todo-rename-input';
+    input.value = originalText;
+    input.style.width = '100%';
+    input.style.fontSize = '13px';
+    input.style.padding = '2px 6px';
+    input.style.border = '1px solid var(--border-light)';
+    input.style.borderRadius = '4px';
+
+    textSpan.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let isFinished = false;
+    async function finishRename() {
+      if (isFinished) return;
+      isFinished = true;
+      const newText = input.value.trim();
+      if (newText && newText !== originalText) {
+        todoItems[index].text = newText;
+        await updateTodoOnBackend(todoItems[index]);
+      }
+      renderTodos();
+    }
+
+    input.addEventListener('blur', finishRename);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') finishRename();
+      if (e.key === 'Escape') renderTodos();
+    });
+  }
+
+  // ==========================================
+  // DASHBOARD EVENT LISTENERS REGISTRATION
+  // ==========================================
+  function setupDashboardListeners() {
+    const prevMonthBtn = document.getElementById('prev-month');
+    const nextMonthBtn = document.getElementById('next-month');
+    const updateBiometricsBtn = document.getElementById('btn-update-biometrics');
+    const goalButtons = document.querySelectorAll('.goal-btn');
+    const unitButtons = document.querySelectorAll('.unit-btn');
+    const liftWeightInput = document.getElementById('input-lift-weight');
+    const liftRepsInput = document.getElementById('input-lift-reps');
+    const exerciseSelect = document.getElementById('select-exercise');
+    const logLiftBtn = document.getElementById('btn-log-lift');
+
+    // To-Do list additions
+    const btnAddTodo = document.getElementById('btn-add-todo');
+    const todoInput = document.getElementById('todo-input');
+    const btnAcceptReorder = document.getElementById('btn-accept-reorder');
+
+    if (btnAddTodo && todoInput) {
+      btnAddTodo.addEventListener('click', addNewTodo);
+      todoInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addNewTodo();
+      });
+    }
+
+    if (btnAcceptReorder) {
+      btnAcceptReorder.addEventListener('click', async () => {
+        isReorderMode = false;
+        const reorderActions = document.getElementById('todo-reorder-actions');
+        const addForm = document.getElementById('todo-add-form');
+        
+        if (reorderActions) reorderActions.style.display = 'none';
+        if (addForm) addForm.style.display = 'flex';
+        
+        await saveTodoOrderToBackend();
+        renderTodos();
+      });
+    }
+
+    // Global todo actions (Clear All)
+    const btnGlobalKebab = document.getElementById('btn-global-todo-kebab');
+    const globalDropdown = document.getElementById('global-todo-dropdown');
+    const btnClearAll = document.getElementById('btn-clear-all-todos');
+
+    if (btnGlobalKebab && globalDropdown) {
+      btnGlobalKebab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.kebab-dropdown').forEach(d => {
+          if (d !== globalDropdown) d.classList.remove('show');
+        });
+        globalDropdown.classList.toggle('show');
+        if (globalDropdown.classList.contains('show')) {
+          const rect = btnGlobalKebab.getBoundingClientRect();
+          // Position fixed above the button
+          globalDropdown.style.top = `${rect.top - 40}px`;
+          globalDropdown.style.left = `${rect.right - 90}px`;
+        }
+      });
+    }
+
+    if (btnClearAll) {
+      btnClearAll.addEventListener('click', async () => {
+        // Close the options menu dropdown immediately
+        if (globalDropdown) globalDropdown.classList.remove('show');
+
+        // Check if there are items to clear
+        if (todoItems.length === 0) {
+          await showCustomDialog("There is nothing to clear.");
+          return;
+        }
+
+        const confirmed = await showCustomDialog('This action cannot be undone. Are you sure you want to clear all tasks?', true);
+        if (!confirmed) return;
+        try {
+          await Promise.all(todoItems.map(item => deleteTodoFromBackend(item.id)));
+          todoItems = [];
+          renderTodos();
+        } catch (e) {
+          console.error('Error clearing all todos:', e);
+        }
+      });
+    }
+
+    // Calendar
+    if (prevMonthBtn && nextMonthBtn) {
+      prevMonthBtn.replaceWith(prevMonthBtn.cloneNode(true));
+      nextMonthBtn.replaceWith(nextMonthBtn.cloneNode(true));
+
+      document.getElementById('prev-month').addEventListener('click', () => {
+        currentMonth--;
+        if (currentMonth < 0) {
+          currentMonth = 11;
+          currentYear--;
+        }
+        renderCalendar(currentYear, currentMonth);
+      });
+
+      document.getElementById('next-month').addEventListener('click', () => {
+        currentMonth++;
+        if (currentMonth > 11) {
+          currentMonth = 0;
+          currentYear++;
+        }
+        renderCalendar(currentYear, currentMonth);
+      });
+    }
+
+    // Biometrics & Nutrition
+    if (updateBiometricsBtn) {
+      updateBiometricsBtn.addEventListener('click', calculateNutrition);
+    }
+
+    goalButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        goalButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeGoal = btn.getAttribute('data-goal');
+        calculateNutrition();
+      });
+    });
+
+    unitButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const weightInput = document.getElementById('input-weight');
+        const weightLabel = document.getElementById('weight-label');
+        const heightLabel = document.getElementById('height-label');
+        const heightImperialWrapper = document.getElementById('height-imperial-wrapper');
+        const heightMetricWrapper = document.getElementById('height-metric-wrapper');
+        const heightCmInput = document.getElementById('input-height-cm');
+        const heightFtInput = document.getElementById('input-height-ft');
+        const heightInInput = document.getElementById('input-height-in');
+
+        const newUnit = btn.getAttribute('data-unit');
+        if (newUnit === activeUnit) return;
+
+        unitButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const currentVal = parseFloat(weightInput.value) || 0;
+
+        if (newUnit === 'metric') {
+          activeUnit = 'metric';
+          weightLabel.textContent = 'Weight (kg)';
+          weightInput.min = 36;
+          weightInput.max = 181;
+          if (currentVal) {
+            weightInput.value = Math.round(currentVal / 2.20462);
+          }
+
+          const ft = parseFloat(heightFtInput.value) || 5;
+          const inch = parseFloat(heightInInput.value) || 9;
+          const cm = Math.round((ft * 12 + inch) * 2.54);
+          heightCmInput.value = cm;
+
+          heightLabel.textContent = 'Height (cm)';
+          heightImperialWrapper.style.display = 'none';
+          heightMetricWrapper.style.display = 'flex';
+        } else {
+          activeUnit = 'imperial';
+          weightLabel.textContent = 'Weight (lbs)';
+          weightInput.min = 80;
+          weightInput.max = 400;
+          if (currentVal) {
+            weightInput.value = Math.round(currentVal * 2.20462);
+          }
+
+          const cm = parseFloat(heightCmInput.value) || 175;
+          const totalInches = cm / 2.54;
+          const ft = Math.floor(totalInches / 12);
+          const inch = Math.round(totalInches % 12);
+          heightFtInput.value = ft;
+          heightInInput.value = inch;
+
+          heightLabel.textContent = 'Height';
+          heightImperialWrapper.style.display = 'flex';
+          heightMetricWrapper.style.display = 'none';
+        }
+
+        calculateNutrition();
+      });
+    });
+
+    // Strength
+    if (logLiftBtn) {
+      logLiftBtn.addEventListener('click', updateStrength1RM);
+    }
+
+    if (liftWeightInput && liftRepsInput) {
+      liftWeightInput.addEventListener('input', updateStrength1RMLocal);
+      liftRepsInput.addEventListener('input', updateStrength1RMLocal);
+    }
+
+    if (exerciseSelect) {
+      exerciseSelect.addEventListener('change', () => {
+        const ex = exerciseSelect.value;
+        const liftWeightInput = document.getElementById('input-lift-weight');
+        const liftRepsInput = document.getElementById('input-lift-reps');
+        
+        if (ex === 'back_squat') {
+          liftWeightInput.value = 315;
+          liftRepsInput.value = 6;
+        } else if (ex === 'deadlift') {
+          liftWeightInput.value = 405;
+          liftRepsInput.value = 5;
+        } else if (ex === 'overhead_press') {
+          liftWeightInput.value = 135;
+          liftRepsInput.value = 5;
+        } else {
+          liftWeightInput.value = 225;
+          liftRepsInput.value = 5;
+        }
+        updateStrength1RMLocal();
+      });
+    }
+  }
+
+  // ==========================================
+  // CALENDAR LOGIC
+  // ==========================================
+  function renderCalendar(year, month) {
+    const daysContainer = document.getElementById('calendar-days-container');
+    if (!daysContainer) return;
+    daysContainer.innerHTML = '';
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    const monthYearDisplay = document.getElementById('month-year-display');
+    if (monthYearDisplay) {
+      monthYearDisplay.textContent = `${months[month]} ${year}`;
+    }
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    for (let i = 0; i < firstDayIndex; i++) {
+      const emptyDay = document.createElement('div');
+      emptyDay.classList.add('calendar-day', 'empty');
+      daysContainer.appendChild(emptyDay);
+    }
+
+    for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+      const dayEl = document.createElement('div');
+      dayEl.classList.add('calendar-day');
+      dayEl.textContent = dayNum;
+
+      const currentDayOfWeek = new Date(year, month, dayNum).getDay();
+      const dotWrapper = document.createElement('div');
+      dotWrapper.classList.add('day-dots');
+
+      if (trainingSchedule.strengthDays.includes(currentDayOfWeek)) {
+        const dot = document.createElement('span');
+        dot.classList.add('mini-dot', 'strength');
+        dotWrapper.appendChild(dot);
+      }
+      if (trainingSchedule.nutritionDays.includes(currentDayOfWeek)) {
+        const dot = document.createElement('span');
+        dot.classList.add('mini-dot', 'nutrition');
+        dotWrapper.appendChild(dot);
+      }
+      if (trainingSchedule.restDays.includes(currentDayOfWeek)) {
+        const dot = document.createElement('span');
+        dot.classList.add('mini-dot', 'rest');
+        dotWrapper.appendChild(dot);
+      }
+
+      dayEl.appendChild(dotWrapper);
+
+      if (year === 2026 && month === 5 && dayNum === 11) {
+        dayEl.classList.add('active');
+      }
+
+      dayEl.addEventListener('click', () => {
+        document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active'));
+        dayEl.classList.add('active');
+      });
+
+      daysContainer.appendChild(dayEl);
+    }
+  }
+
+  // ==========================================
+  // NUTRITION & BIOMETRICS API INTEGRATION
+  // ==========================================
+  async function calculateNutrition() {
+    if (!isLoggedIn) return;
+
+    const weightInput = document.getElementById('input-weight');
+    const heightFtInput = document.getElementById('input-height-ft');
+    const heightInInput = document.getElementById('input-height-in');
+    const heightCmInput = document.getElementById('input-height-cm');
+    const fatInput = document.getElementById('input-fat');
+    const sexSelect = document.getElementById('select-sex');
+    const activitySelect = document.getElementById('select-activity');
+
+    const bmrDisplay = document.getElementById('val-bmr');
+    const tdeeDisplay = document.getElementById('val-tdee');
+    const targetCaloriesDisplay = document.getElementById('num-calories');
+    const proteinG = document.getElementById('val-protein-g');
+    const proteinPct = document.getElementById('val-protein-pct');
+    const carbsG = document.getElementById('val-carbs-g');
+    const carbsPct = document.getElementById('val-carbs-pct');
+    const fatsG = document.getElementById('val-fats-g');
+    const fatsPct = document.getElementById('val-fats-pct');
+
+    const barProtein = document.getElementById('bar-protein');
+    const barCarbs = document.getElementById('bar-carbs');
+    const barFats = document.getElementById('bar-fats');
+    const calorieProgressBar = document.getElementById('calorie-progress-bar');
+
+    const biometricsOverlay = document.getElementById('biometrics-loading-overlay');
+    const nutritionOverlay = document.getElementById('nutrition-loading-overlay');
+
+    let weightKg, heightCm, weightLbs;
+    const sex = sexSelect.value;
+    const activity = activitySelect.value;
+    const age = 28;
+    const bodyFatPercent = parseFloat(fatInput.value);
+    const bodyFat = isNaN(bodyFatPercent) ? null : bodyFatPercent / 100;
+
+    if (activeUnit === 'imperial') {
+      const wLbs = parseFloat(weightInput.value) || 190;
+      weightLbs = wLbs;
+      weightKg = wLbs / 2.20462;
+
+      const heightFt = parseFloat(heightFtInput.value) || 5;
+      const heightIn = parseFloat(heightInInput.value) || 9;
+      heightCm = (heightFt * 12 + heightIn) * 2.54;
+    } else {
+      const wKg = parseFloat(weightInput.value) || 86;
+      weightKg = wKg;
+      weightLbs = wKg * 2.20462;
+
+      heightCm = parseFloat(heightCmInput.value) || 175;
+    }
+
+    if (biometricsOverlay) biometricsOverlay.classList.add('active');
+    if (nutritionOverlay) nutritionOverlay.classList.add('active');
+
+    try {
+      const bioResponse = await fetch(`${API_BASE}/biometrics/?user_id=${USER_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          weight_kg: weightKg,
+          height_cm: heightCm,
+          age: age,
+          sex: sex,
+          activity_level: activity,
+          body_fat: bodyFat
+        })
+      });
+
+      if (!bioResponse.ok) {
+        const errorData = await bioResponse.json();
+        throw new Error(errorData.detail || 'Failed to update biometrics');
+      }
+
+      const macroResponse = await fetch(`${API_BASE}/users/${USER_ID}/macros?goal=${activeGoal}`);
+      if (!macroResponse.ok) {
+        const errorData = await macroResponse.json();
+        throw new Error(errorData.detail || 'Failed to fetch macros');
+      }
+
+      const macroData = await macroResponse.json();
+
+      let bmr = 0;
+      if (bodyFat && bodyFat > 0.05) {
+        const leanMass = weightKg * (1 - bodyFat);
+        bmr = 370 + (21.6 * leanMass);
+      } else {
+        bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age);
+        if (sex === 'Male') {
+          bmr += 5;
+        } else {
+          bmr -= 161;
+        }
+      }
+      const tdee = bmr * (ACTIVITY_MULTIPLIERS[activity] || 1.375);
+
+      const targetCalories = macroData.total_calories || tdee;
+      const proteinGrams = Math.round(macroData.protein || weightLbs);
+      const fatsGrams = Math.round(macroData.fat || 50);
+      const carbsGrams = Math.round(macroData.carbs || 150);
+
+      const totalKcalComputed = (proteinGrams * 4) + (carbsGrams * 4) + (fatsGrams * 9);
+      const pPct = totalKcalComputed ? Math.round(((proteinGrams * 4) / totalKcalComputed) * 100) : 0;
+      const cPct = totalKcalComputed ? Math.round(((carbsGrams * 4) / totalKcalComputed) * 100) : 0;
+      const fPct = totalKcalComputed ? Math.round(((fatsGrams * 9) / totalKcalComputed) * 100) : 0;
+
+      bmrDisplay.textContent = `${Math.round(bmr)} kcal`;
+      tdeeDisplay.textContent = `${Math.round(tdee)} kcal`;
+      targetCaloriesDisplay.textContent = Math.round(targetCalories).toLocaleString();
+
+      proteinG.textContent = proteinGrams;
+      proteinPct.textContent = pPct;
+      carbsG.textContent = carbsGrams;
+      carbsPct.textContent = cPct;
+      fatsG.textContent = fatsGrams;
+      fatsPct.textContent = fPct;
+
+      barProtein.style.width = `${pPct}%`;
+      barCarbs.style.width = `${cPct}%`;
+      barFats.style.width = `${fPct}%`;
+
+      const perimeter = 276.46;
+      const consumed = 1100;
+      const progressOffset = perimeter - Math.min((consumed / targetCalories) * perimeter, perimeter);
+      calorieProgressBar.style.strokeDashoffset = progressOffset;
+
+    } catch (err) {
+      console.error('API Error:', err);
+      calculateNutritionLocal();
+    } finally {
+      if (biometricsOverlay) biometricsOverlay.classList.remove('active');
+      if (nutritionOverlay) nutritionOverlay.classList.remove('active');
+    }
+  }
+
+  function calculateNutritionLocal() {
+    const weightInput = document.getElementById('input-weight');
+    const heightFtInput = document.getElementById('input-height-ft');
+    const heightInInput = document.getElementById('input-height-in');
+    const heightCmInput = document.getElementById('input-height-cm');
+    const fatInput = document.getElementById('input-fat');
+    const sexSelect = document.getElementById('select-sex');
+    const activitySelect = document.getElementById('select-activity');
+
+    const bmrDisplay = document.getElementById('val-bmr');
+    const tdeeDisplay = document.getElementById('val-tdee');
+    const targetCaloriesDisplay = document.getElementById('num-calories');
+    const proteinG = document.getElementById('val-protein-g');
+    const proteinPct = document.getElementById('val-protein-pct');
+    const carbsG = document.getElementById('val-carbs-g');
+    const carbsPct = document.getElementById('val-carbs-pct');
+    const fatsG = document.getElementById('val-fats-g');
+    const fatsPct = document.getElementById('val-fats-pct');
+
+    const barProtein = document.getElementById('bar-protein');
+    const barCarbs = document.getElementById('bar-carbs');
+    const barFats = document.getElementById('bar-fats');
+    const calorieProgressBar = document.getElementById('calorie-progress-bar');
+
+    let weightKg, heightCm, weightLbs;
+    const sex = sexSelect.value;
+    const activity = activitySelect.value;
+    const age = 28;
+    const bodyFatPercent = parseFloat(fatInput.value);
+    const bodyFat = isNaN(bodyFatPercent) ? null : bodyFatPercent / 100;
+
+    if (activeUnit === 'imperial') {
+      const wLbs = parseFloat(weightInput.value) || 190;
+      weightLbs = wLbs;
+      weightKg = wLbs / 2.20462;
+
+      const heightFt = parseFloat(heightFtInput.value) || 5;
+      const heightIn = parseFloat(heightInInput.value) || 9;
+      heightCm = (heightFt * 12 + heightIn) * 2.54;
+    } else {
+      const wKg = parseFloat(weightInput.value) || 86;
+      weightKg = wKg;
+      weightLbs = wKg * 2.20462;
+
+      heightCm = parseFloat(heightCmInput.value) || 175;
+    }
+
+    let bmr = 0;
+    if (bodyFat && bodyFat > 0.05) {
+      const leanMass = weightKg * (1 - bodyFat);
+      bmr = 370 + (21.6 * leanMass);
+    } else {
+      bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age);
+      if (sex === 'Male') {
+        bmr += 5;
+      } else {
+        bmr -= 161;
+      }
+    }
+
+    const tdee = bmr * (ACTIVITY_MULTIPLIERS[activity] || 1.375);
+
+    let targetCalories = tdee;
+    let proteinPercent = 35;
+    let carbsPercent = 40;
+    let fatsPercent = 25;
+
+    if (activeGoal === 'cut') {
+      targetCalories = tdee - 500;
+      proteinPercent = 40;
+      carbsPercent = 35;
+      fatsPercent = 25;
+    } else if (activeGoal === 'bulk') {
+      targetCalories = tdee + 350;
+      proteinPercent = 30;
+      carbsPercent = 45;
+      fatsPercent = 25;
+    } else {
+      proteinPercent = 30;
+      carbsPercent = 45;
+      fatsPercent = 25;
+    }
+
+    const proteinGrams = Math.round(weightLbs * 1.0);
+    const fatsGrams = Math.round((targetCalories * (fatsPercent / 100)) / 9);
+    const carbsGrams = Math.round((targetCalories - (proteinGrams * 4 + fatsGrams * 9)) / 4);
+
+    const totalKcalComputed = (proteinGrams * 4) + (carbsGrams * 4) + (fatsGrams * 9);
+    const pPct = Math.round(((proteinGrams * 4) / totalKcalComputed) * 100) || 0;
+    const cPct = Math.round(((carbsGrams * 4) / totalKcalComputed) * 100) || 0;
+    const fPct = Math.round(((fatsGrams * 9) / totalKcalComputed) * 100) || 0;
+
+    bmrDisplay.textContent = `${Math.round(bmr)} kcal`;
+    tdeeDisplay.textContent = `${Math.round(tdee)} kcal`;
+    targetCaloriesDisplay.textContent = Math.round(targetCalories).toLocaleString();
+
+    proteinG.textContent = proteinGrams;
+    proteinPct.textContent = pPct;
+    carbsG.textContent = carbsGrams;
+    carbsPct.textContent = cPct;
+    fatsG.textContent = fatsGrams;
+    fatsPct.textContent = fPct;
+
+    barProtein.style.width = `${pPct}%`;
+    barCarbs.style.width = `${cPct}%`;
+    barFats.style.width = `${fPct}%`;
+
+    const perimeter = 276.46;
+    const consumed = 1100;
+    const progressOffset = perimeter - Math.min((consumed / targetCalories) * perimeter, perimeter);
+    calorieProgressBar.style.strokeDashoffset = progressOffset;
+  }
+
+  // ==========================================
+  // STRENGTH LAB API INTEGRATION
+  // ==========================================
+  async function updateStrength1RM() {
+    if (!isLoggedIn) return;
+
+    const liftWeightInput = document.getElementById('input-lift-weight');
+    const liftRepsInput = document.getElementById('input-lift-reps');
+    const exerciseSelect = document.getElementById('select-exercise');
+    const mean1rmDisplay = document.getElementById('val-mean-1rm');
+    const strengthOverlay = document.getElementById('strength-loading-overlay');
+
+    const weight = parseFloat(liftWeightInput.value);
+    const reps = parseInt(liftRepsInput.value);
+    const exercise = exerciseSelect.value;
+
+    if (isNaN(weight) || isNaN(reps) || weight <= 0 || reps <= 0) return;
+
+    if (strengthOverlay) strengthOverlay.classList.add('active');
+
+    try {
+      const safeWeight = Math.min(weight, 500);
+
+      const response = await fetch(`${API_BASE}/strength/?user_id=${USER_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exercise: exercise,
+          weight_lifted: safeWeight,
+          reps: reps
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to update strength parameters');
+      }
+
+      const data = await response.json();
+      
+      mean1rmDisplay.innerHTML = `${data.estimated_1rm.toFixed(1)} <span class="calc-unit">lbs</span>`;
+
+      const repsRange = Array.from({length: 12}, (_, i) => i + 1);
+      const predictedLoads = repsRange.map(r => data.strength_curve[r] || (data.estimated_1rm / (1 + (r - 1) * 0.033)));
+
+      updateChart(repsRange, predictedLoads);
+
+    } catch (err) {
+      console.error('Strength API Error:', err);
+      updateStrength1RMLocal();
+    } finally {
+      if (strengthOverlay) strengthOverlay.classList.remove('active');
+    }
+  }
+
+  function updateStrength1RMLocal() {
+    const liftWeightInput = document.getElementById('input-lift-weight');
+    const liftRepsInput = document.getElementById('input-lift-reps');
+    const exerciseSelect = document.getElementById('select-exercise');
+    const mean1rmDisplay = document.getElementById('val-mean-1rm');
+
+    const weight = parseFloat(liftWeightInput.value);
+    const reps = parseInt(liftRepsInput.value);
+
+    if (isNaN(weight) || isNaN(reps) || weight <= 0 || reps <= 0) return;
+
+    const epley = weight * (1 + (reps / 30));
+    const brzycki = weight / (1.0278 - (0.0278 * reps));
+    const lander = weight / (1.013 - (0.02671 * reps));
+    const mean = (epley + brzycki + lander) / 3;
+
+    mean1rmDisplay.innerHTML = `${mean.toFixed(1)} <span class="calc-unit">lbs</span>`;
+
+    const repsRange = Array.from({length: 12}, (_, i) => i + 1);
+    const exercise = exerciseSelect.value;
+    
+    let decayMultiplier = 0.033;
+    if (exercise === 'overhead_press') {
+      decayMultiplier = 0.039;
+    } else if (exercise === 'deadlift') {
+      decayMultiplier = 0.028;
+    } else if (exercise === 'back_squat') {
+      decayMultiplier = 0.031;
+    }
+
+    const predictedLoads = repsRange.map(r => {
+      const baseLoad = mean / (1 + (r - 1) * decayMultiplier);
+      const waveNoise = Math.sin(r * 0.9) * (mean * 0.007);
+      return Math.max(0, baseLoad + waveNoise);
+    });
+
+    updateChart(repsRange, predictedLoads);
+  }
+
+  function updateChart(labels, data) {
+    const canvas = document.getElementById('strengthCurveChart');
+    if (!canvas) return;
+
+    if (strengthCurveChart) {
+      strengthCurveChart.data.labels = labels;
+      strengthCurveChart.data.datasets[0].data = data;
+      strengthCurveChart.update();
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    strengthCurveChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Predicted Load (lbs)',
+          data: data,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.05)',
+          borderWidth: 2.5,
+          tension: 0.35,
+          pointBackgroundColor: '#2563eb',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 1.5,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1e293b',
+            titleColor: '#ffffff',
+            bodyColor: '#cbd5e1',
+            cornerRadius: 6,
+            padding: 10,
+            displayColors: false,
+            callbacks: {
+              title: (context) => `Reps: ${context[0].label}`,
+              label: (context) => `Weight: ${parseFloat(context.parsed.y).toFixed(1)} lbs`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: '#94a3b8',
+              font: { family: 'Inter', size: 10 }
+            },
+            title: {
+              display: true,
+              text: 'Repetitions',
+              color: '#64748b',
+              font: { family: 'Inter', size: 10, weight: 600 }
+            }
+          },
+          y: {
+            grid: { color: '#f1f5f9' },
+            ticks: {
+              color: '#94a3b8',
+              font: { family: 'Inter', size: 10 }
+            },
+            title: {
+              display: true,
+              text: 'Load (lbs)',
+              color: '#64748b',
+              font: { family: 'Inter', size: 10, weight: 600 }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ==========================================
+  // STATEFUL RESOURCE HUB RENDERING
+  // ==========================================
+  function renderResources(filter = 'all') {
+    const scrollContainer = document.querySelector('.resources-scroll-container');
+    if (!scrollContainer) return;
+    scrollContainer.innerHTML = '';
+
+    localResourceDatabase.forEach(item => {
+      if (filter !== 'all' && item.category !== filter) return;
+
+      const card = document.createElement('div');
+      card.className = `resource-item-card ${item.type}-card`;
+      card.setAttribute('data-category', item.category);
+
+      if (item.type === 'video') {
+        card.innerHTML = `
+          <div class="video-thumbnail-container">
+            <img src="${item.thumbnail}" alt="${item.title}" class="video-thumbnail">
+            <div class="video-duration">${item.duration}</div>
+            <div class="play-overlay-button" id="trigger-video-modal">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            </div>
+          </div>
+          <div class="resource-text">
+            <span class="resource-tag tag-video">VIDEO GUIDE</span>
+            <h3 class="resource-headline">${item.title}</h3>
+            <p class="resource-author">by ${item.author}</p>
+          </div>
+        `;
+        const playBtn = card.querySelector('#trigger-video-modal');
+        if (playBtn) {
+          playBtn.addEventListener('click', () => {
+            videoModal.classList.add('active');
+          });
+        }
+      } else {
+        card.innerHTML = `
+          <div class="article-details">
+            <span class="resource-tag tag-article">ARTICLE</span>
+            <h3 class="resource-headline">${item.title}</h3>
+            <span class="article-meta">${item.readTime} • By ${item.author}</span>
+          </div>
+          <button class="bookmark-btn ${item.bookmarked ? 'bookmarked' : ''}">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="${item.bookmarked ? 'currentColor' : 'none'}"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+          </button>
+        `;
+
+        const bookmarkBtn = card.querySelector('.bookmark-btn');
+        bookmarkBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          item.bookmarked = !item.bookmarked;
+          bookmarkBtn.classList.toggle('bookmarked');
+          const svg = bookmarkBtn.querySelector('svg');
+          svg.setAttribute('fill', item.bookmarked ? 'currentColor' : 'none');
+        });
+      }
+
+      scrollContainer.appendChild(card);
+    });
+
+    if (filter === 'all' || filter === 'strength') {
+      const diagramCard = document.createElement('div');
+      diagramCard.className = 'resource-item-card diagram-card';
+      diagramCard.setAttribute('data-category', 'strength');
+      diagramCard.innerHTML = `
+        <h4 class="diagram-title">Interactive Muscle Engagement</h4>
+        <p class="diagram-subtitle">Hover over muscle groups to view primary lifts</p>
+        <div class="anatomy-svg-wrapper">
+          <svg viewBox="0 0 200 240" class="anatomy-svg" id="muscle-svg">
+            <circle cx="100" cy="25" r="12" fill="#E2E8F0" class="muscle-group" data-muscle="Neck"></circle>
+            <path d="M 80 40 L 120 40 L 135 55 L 115 58 L 100 48 L 85 58 L 65 55 Z" fill="#CBD5E1" class="muscle-group" data-muscle="Shoulders"></path>
+            <path d="M 85 58 L 100 48 L 115 58 L 115 85 L 85 85 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Chest"></path>
+            <path d="M 80 85 L 68 62 L 85 58 L 100 70 L 115 58 L 132 62 L 120 85 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Lats"></path>
+            <rect x="86" y="88" width="28" height="32" rx="4" fill="#CBD5E1" class="muscle-group" data-muscle="Abs"></rect>
+            <path d="M 72 135 L 97 135 L 97 185 L 75 185 Z" fill="#94A3B8" class="muscle-group active-muscle" data-muscle="Quads"></path>
+            <path d="M 103 135 L 128 135 L 125 185 L 103 185 Z" fill="#94A3B8" class="muscle-group active-muscle" data-muscle="Quads"></path>
+            <path d="M 70 120 H 130 V 134 H 70 Z" fill="#CBD5E1" class="muscle-group" data-muscle="Glutes"></path>
+            <path d="M 76 195 L 95 195 L 90 230 L 80 230 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Calves"></path>
+            <path d="M 105 195 L 124 195 L 120 230 L 110 230 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Calves"></path>
+          </svg>
+          <div class="anatomy-overlay" id="anatomy-overlay-text">
+            Hover on highlight: <span class="highlighted-muscle">Quads</span>
+            <div class="primary-exercise">Targeted by: Back Squat</div>
+          </div>
+        </div>
+      `;
+      scrollContainer.appendChild(diagramCard);
+
+      const mGroups = diagramCard.querySelectorAll('.muscle-group');
+      const anatomyOverlay = diagramCard.querySelector('#anatomy-overlay-text');
+      mGroups.forEach(group => {
+        group.addEventListener('mouseenter', () => {
+          mGroups.forEach(m => m.classList.remove('active-muscle'));
+          group.classList.add('active-muscle');
+          const groupName = group.getAttribute('data-muscle');
+          const details = muscleExercises[groupName];
+          if (details && anatomyOverlay) {
+            anatomyOverlay.innerHTML = `
+              Hover on highlight: <span class="highlighted-muscle">${groupName}</span>
+              <div class="primary-exercise">Targeted by: ${details.exercise}</div>
+            `;
+          }
+        });
+      });
+    }
+  }
+
+  // ==========================================
+  // INITIALIZATION & AUTOSYNC FLOW
+  // ==========================================
+  async function initializeData() {
+    if (!isLoggedIn) return;
+
+    const weightInput = document.getElementById('input-weight');
+    const heightFtInput = document.getElementById('input-height-ft');
+    const heightInInput = document.getElementById('input-height-in');
+    const fatInput = document.getElementById('input-fat');
+    const sexSelect = document.getElementById('select-sex');
+    const activitySelect = document.getElementById('select-activity');
+    const exerciseSelect = document.getElementById('select-exercise');
+    
+    const bmrDisplay = document.getElementById('val-bmr');
+    const tdeeDisplay = document.getElementById('val-tdee');
+    const targetCaloriesDisplay = document.getElementById('num-calories');
+    const proteinG = document.getElementById('val-protein-g');
+    const proteinPct = document.getElementById('val-protein-pct');
+    const carbsG = document.getElementById('val-carbs-g');
+    const carbsPct = document.getElementById('val-carbs-pct');
+    const fatsG = document.getElementById('val-fats-g');
+    const fatsPct = document.getElementById('val-fats-pct');
+
+    const barProtein = document.getElementById('bar-protein');
+    const barCarbs = document.getElementById('bar-carbs');
+    const barFats = document.getElementById('bar-fats');
+    const calorieProgressBar = document.getElementById('calorie-progress-bar');
+    const mean1rmDisplay = document.getElementById('val-mean-1rm');
+
+    renderCalendar(currentYear, currentMonth);
+
+    // Initial todo sync
+    todoItems = await fetchTodosFromBackend();
+    renderTodos();
+
+    try {
+      const response = await fetch(`${API_BASE}/users/${USER_ID}/macros?goal=${activeGoal}`);
+      if (response.status === 404) {
+        console.log('Registering default user profile on FastAPI backend...');
+        await calculateNutrition();
+      } else if (response.ok) {
+        const data = await response.json();
+        const weightLbs = parseFloat(weightInput.value) || 190;
+        const heightFt = parseFloat(heightFtInput.value) || 5;
+        const heightIn = parseFloat(heightInInput.value) || 9;
+        const bodyFatPercent = parseFloat(fatInput.value) || 18;
+        const bodyFat = bodyFatPercent / 100;
+        const sex = sexSelect.value;
+        const activity = activitySelect.value;
+        const age = 28;
+
+        const weightKg = weightLbs / 2.20462;
+        const heightCm = (heightFt * 12 + heightIn) * 2.54;
+
+        let bmr = 0;
+        if (bodyFat && bodyFat > 0.05) {
+          const leanMass = weightKg * (1 - bodyFat);
+          bmr = 370 + (21.6 * leanMass);
+        } else {
+          bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age);
+          if (sex === 'Male') {
+            bmr += 5;
+          } else {
+            bmr -= 161;
+          }
+        }
+        const tdee = bmr * (ACTIVITY_MULTIPLIERS[activity] || 1.375);
+
+        const targetCalories = data.total_calories || tdee;
+        const proteinGrams = Math.round(data.protein || weightLbs);
+        const fatsGrams = Math.round(data.fat || 50);
+        const carbsGrams = Math.round(data.carbs || 150);
+
+        const totalKcalComputed = (proteinGrams * 4) + (carbsGrams * 4) + (fatsGrams * 9);
+        const pPct = totalKcalComputed ? Math.round(((proteinGrams * 4) / totalKcalComputed) * 100) : 0;
+        const cPct = totalKcalComputed ? Math.round(((carbsGrams * 4) / totalKcalComputed) * 100) : 0;
+        const fPct = totalKcalComputed ? Math.round(((fatsGrams * 9) / totalKcalComputed) * 100) : 0;
+
+        bmrDisplay.textContent = `${Math.round(bmr)} kcal`;
+        tdeeDisplay.textContent = `${Math.round(tdee)} kcal`;
+        targetCaloriesDisplay.textContent = Math.round(targetCalories).toLocaleString();
+
+        proteinG.textContent = proteinGrams;
+        proteinPct.textContent = pPct;
+        carbsG.textContent = carbsGrams;
+        carbsPct.textContent = cPct;
+        fatsG.textContent = fatsGrams;
+        fatsPct.textContent = fPct;
+
+        barProtein.style.width = `${pPct}%`;
+        barCarbs.style.width = `${cPct}%`;
+        barFats.style.width = `${fPct}%`;
+
+        const perimeter = 276.46;
+        const consumed = 1100;
+        const progressOffset = perimeter - Math.min((consumed / targetCalories) * perimeter, perimeter);
+        calorieProgressBar.style.strokeDashoffset = progressOffset;
+      }
+    } catch (e) {
+      console.warn('Backend sync failed, using offline mode:', e);
+      calculateNutritionLocal();
+    }
+
+    try {
+      const response = await fetch(`${API_BASE}/users/${USER_ID}/strengthm/${exerciseSelect.value}`);
+      if (response.ok) {
+        const data = await response.json();
+        mean1rmDisplay.innerHTML = `${data.estimated.toFixed(1)} <span class="calc-unit">lbs</span>`;
+        const repsRange = Array.from({length: 12}, (_, i) => i + 1);
+        const predictedLoads = repsRange.map(r => data.strength_curve[r] || (data.estimated / (1 + (r - 1) * 0.033)));
+        updateChart(repsRange, predictedLoads);
+      } else {
+        await updateStrength1RM();
+      }
+    } catch (e) {
+      console.warn('Strength baseline fetch failed, using offline mode:', e);
+      updateStrength1RMLocal();
+    }
+  }
+
+  function showCustomDialog(message, isConfirm = false) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('custom-dialog-modal');
+      const msgEl = document.getElementById('custom-dialog-message');
+      const titleEl = document.getElementById('custom-dialog-title');
+      const btnOk = document.getElementById('btn-dialog-ok');
+      const btnCancel = document.getElementById('btn-dialog-cancel');
+      
+      titleEl.textContent = isConfirm ? 'Confirm Action' : 'Notice';
+      msgEl.textContent = message;
+      btnCancel.style.display = isConfirm ? 'inline-block' : 'none';
+      
+      modal.classList.add('active');
+      
+      function cleanup() {
+        modal.classList.remove('active');
+        btnOk.removeEventListener('click', onOk);
+        btnCancel.removeEventListener('click', onCancel);
+      }
+      
+      function onOk() {
+        cleanup();
+        resolve(true);
+      }
+      
+      function onCancel() {
+        cleanup();
+        resolve(false);
+      }
+      
+      btnOk.addEventListener('click', onOk);
+      btnCancel.addEventListener('click', onCancel);
+    });
+  }
+
+  // Init routines
+  setupProfileDropdown();
+  setupDashboardListeners();
+  renderResources('all');
+  initializeData();
+
+});

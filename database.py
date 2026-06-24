@@ -46,3 +46,4 @@ class TodoModel(Base):
     title = Column(String, nullable=False)
     completed = Column(Boolean, default=False, nullable=False)
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    position = Column(Integer, default=0, nullable=False)
