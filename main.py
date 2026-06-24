@@ -146,3 +146,47 @@ def get_strength_progression_timeline(user_id: int, exercise: str, db: Session =
         payload.append(entry_data)
 
     return payload
+
+@app.get("/users/{user_id}/todo", response_model=list[schemas.TodoResponse])
+def get_todo_list(
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    user_todo_items = crud.get_user_todos(db=db, user_id=user_id, skip=skip, limit=limit)
+    return user_todo_items
+
+@app.post("/users/{user_id}/todo", response_model=schemas.TodoResponse)
+def create_todo_item(
+    user_id: int,
+    todo_data: schemas.TodoCreate,
+    db: Session = Depends(get_db)
+):
+    new_todo = crud.create_todo(db=db, user_id=user_id, todo_data=todo_data.model_dump())
+    return new_todo
+
+@app.put("/users/{user_id}/todo/{todo_id}", response_model=schemas.TodoResponse)
+def update_todo_item(
+    user_id: int,
+    todo_id: int,
+    todo_data: schemas.TodoUpdate,
+    db: Session = Depends(get_db)
+):
+    updated_todo = crud.update_todo(
+        db=db,
+        user_id=user_id,
+        todo_id=todo_id,
+        todo_data=todo_data.model_dump(exclude_unset=True)
+    )
+    if not updated_todo:
+        raise HTTPException(status_code=404, detail="Todo item not found for this user.")
+    return updated_todo
+
+@app.delete("/users/{user_id}/todo/{todo_id}")
+def delete_todo_item(user_id: int, todo_id: int, db: Session = Depends(get_db)):
+    success = crud.delete_todo(db=db, user_id=user_id, todo_id=todo_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Todo item not found for this user.")
+    return {"message": "Todo item deleted successfully."}
+

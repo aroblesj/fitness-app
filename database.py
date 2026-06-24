@@ -1,4 +1,4 @@
-from sqlalchemy import DateTime, create_engine, Column, Integer, String, Float, ForeignKey, JSON
+from sqlalchemy import DateTime, create_engine, Column, Integer, String, Float, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import sessionmaker, declarative_base
 from datetime import datetime, timezone
 
@@ -38,3 +38,11 @@ class StrengthModel(Base):
     reps = Column(Integer, nullable=False)
     estimated_1rm = Column(Float, nullable=False)
     strength_curve = Column(JSON, nullable=False)
+
+class TodoModel(Base):
+    __tablename__ = "todo"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    completed = Column(Boolean, default=False, nullable=False)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)

@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 
 class BiometricBase(BaseModel):
@@ -31,6 +32,25 @@ class StrengthResponse(BaseModel):
     reps: int
     estimated_1rm: float
     strength_curve: dict
+
+    class Config:
+        from_attributes = True
+
+class TodoBase(BaseModel):
+    title: str
+    completed: bool = False
+
+class TodoCreate(TodoBase):
+    pass
+
+class TodoUpdate(BaseModel):
+    title: str | None = None
+    completed: bool | None = None
+
+class TodoResponse(TodoBase):
+    id: int
+    user_id: int
+    timestamp: datetime
 
     class Config:
         from_attributes = True
