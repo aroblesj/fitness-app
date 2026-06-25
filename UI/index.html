@@ -57,10 +57,10 @@
         <!-- Main Calendar Widget -->
         <div class="bento-card calendar-card">
           <div class="card-header">
-            <h2 class="card-title">Training Schedule</h2>
+            <h2 class="card-title">Calendar</h2>
             <div class="calendar-nav">
               <button class="nav-btn" id="prev-month">&larr;</button>
-              <span class="current-month-label" id="month-year-display">June 2026</span>
+              <span class="current-month-label" id="month-year-display" style="cursor: pointer; user-select: none; border-bottom: 1px dotted var(--text-muted);">June 2026</span>
               <button class="nav-btn" id="next-month">&rarr;</button>
             </div>
           </div>
@@ -75,9 +75,15 @@
           </div>
 
           <div class="calendar-legend">
-            <div class="legend-item"><span class="dot dot-strength"></span>Strength</div>
-            <div class="legend-item"><span class="dot dot-nutrition"></span>Cardio</div>
-            <div class="legend-item"><span class="dot dot-rest"></span>Rest Day</div>
+            <div class="legend-item"><span class="dot dot-strength"></span>Strength Logged</div>
+            <div class="legend-item"><span class="dot dot-nutrition"></span>Body Stats Logged</div>
+          </div>
+          
+          <div class="calendar-day-details" id="calendar-day-details" style="margin-top: 16px; padding: 16px; background: #f8fafc; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; min-height: 180px; height: 180px; overflow-y: auto;">
+            <h4 class="details-title" style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: var(--text-main); text-align: center;">Day Log Details</h4>
+            <div class="details-content" id="details-content" style="color: var(--text-muted); text-align: center; font-size: 13px;">
+              Select a day to view historical calculation records.
+            </div>
           </div>
         </div>
 
@@ -261,7 +267,14 @@
             <div class="strength-form">
               <div class="form-row">
                 <div class="input-wrapper">
-                  <label for="select-exercise">Exercise</label>
+                  <label for="select-exercise" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Exercise</span>
+                    <span style="display: flex; gap: 6px;">
+                      <button id="btn-add-exercise" style="background: transparent; border: none; cursor: pointer; color: var(--accent-emerald); font-size: 11px; font-weight: 600;">+ Add</button>
+                      <button id="btn-rename-exercise" style="background: transparent; border: none; cursor: pointer; color: var(--text-muted); font-size: 11px; font-weight: 600;">✎ Rename</button>
+                      <button id="btn-remove-exercise" style="background: transparent; border: none; cursor: pointer; color: var(--accent-coral); font-size: 11px; font-weight: 600;">✗ Remove</button>
+                    </span>
+                  </label>
                   <select id="select-exercise" class="custom-select">
                     <option value="back_squat">Barbell Back Squat</option>
                     <option value="bench_press" selected>Barbell Bench Press</option>
@@ -292,14 +305,24 @@
             </div>
           </div>
 
-          <!-- Strength Curve Plotter -->
+          <!-- Strength Curve List -->
           <div class="bento-card strength-curve-card">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
               <h2 class="card-title">Predicted Strength Curve</h2>
-              <span class="subtitle-tag">Predicted reps (1-12) vs. Load</span>
+              <span class="subtitle-text" style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Predicted loads for Reps 1-12</span>
             </div>
-            <div class="chart-container">
-              <canvas id="strengthCurveChart"></canvas>
+            <div class="chart-container" style="display: block; max-height: 250px; overflow-y: auto; width: 100%;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <thead>
+                  <tr style="border-bottom: 2px solid var(--border-light); text-align: left; color: var(--text-muted);">
+                    <th style="padding: 6px 12px; font-weight: 600;">Reps</th>
+                    <th style="padding: 6px 12px; font-weight: 600; text-align: right;">Weight</th>
+                  </tr>
+                </thead>
+                <tbody id="strength-curve-list">
+                  <!-- JS will inject table rows here -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

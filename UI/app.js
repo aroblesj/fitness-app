@@ -663,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
           currentMonth = 11;
           currentYear--;
         }
-        renderCalendar(currentYear, currentMonth);
+        updateCalendar(currentYear, currentMonth);
       });
 
       document.getElementById('next-month').addEventListener('click', () => {
@@ -672,8 +672,166 @@ document.addEventListener('DOMContentLoaded', () => {
           currentMonth = 0;
           currentYear++;
         }
-        renderCalendar(currentYear, currentMonth);
+        updateCalendar(currentYear, currentMonth);
       });
+
+      const monthYearLabel = document.getElementById('month-year-display');
+      if (monthYearLabel) {
+        monthYearLabel.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          // Create a quick drop-down selection using simple overlay elements or HTML5 selectors
+          const existingSelector = document.getElementById('calendar-quick-selector');
+          if (existingSelector) {
+            existingSelector.remove();
+            return;
+          }
+
+          const selectorContainer = document.createElement('div');
+          selectorContainer.id = 'calendar-quick-selector';
+          selectorContainer.style.position = 'absolute';
+          selectorContainer.style.background = 'var(--bg-card)';
+          selectorContainer.style.border = '1px solid var(--border-light)';
+          selectorContainer.style.borderRadius = '8px';
+          selectorContainer.style.padding = '12px';
+          selectorContainer.style.boxShadow = 'var(--shadow-lg)';
+          selectorContainer.style.zIndex = '1000';
+          selectorContainer.style.display = 'flex';
+          selectorContainer.style.gap = '8px';
+          selectorContainer.style.flexDirection = 'column';
+
+          const rect = monthYearLabel.getBoundingClientRect();
+          selectorContainer.style.top = `${rect.bottom + window.scrollY + 6}px`;
+          selectorContainer.style.left = `${rect.left + window.scrollX - 40}px`;
+
+          const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+          
+          let monthHtml = '<select id="quick-month-select" class="custom-select" style="font-size: 13px; padding: 4px;">';
+          months.forEach((m, idx) => {
+            monthHtml += `<option value="${idx}" ${idx === currentMonth ? 'selected' : ''}>${m}</option>`;
+          });
+          monthHtml += '</select>';
+
+          let yearHtml = '<select id="quick-year-select" class="custom-select" style="font-size: 13px; padding: 4px;">';
+          for (let y = 2020; y <= 2035; y++) {
+            yearHtml += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+          }
+          yearHtml += '</select>';
+
+          // Helper to get total days in selected month/year
+          const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
+          const totalDays = getDaysInMonth(currentYear, currentMonth);
+          const todayDate = new Date().getDate();
+          
+          let dayHtml = '<select id="quick-day-select" class="custom-select" style="font-size: 13px; padding: 4px;">';
+          for (let d = 1; d <= totalDays; d++) {
+            dayHtml += `<option value="${d}" ${d === todayDate ? 'selected' : ''}>${d}</option>`;
+          }
+          dayHtml += '</select>';
+
+          const now = new Date();
+          const isTodayActive = (currentYear === now.getFullYear() && currentMonth === now.getMonth());
+
+          let buttonsHtml = '';
+          if (isTodayActive) {
+            buttonsHtml = `<button id="btn-apply-quick-select" class="btn-primary" style="font-size: 12px; padding: 4px 8px; margin-top: 6px; width: 100%;">Go</button>`;
+          } else {
+            buttonsHtml = `
+              <div style="display: flex; gap: 6px; margin-top: 6px;">
+                <button id="btn-apply-quick-select" class="btn-primary" style="font-size: 12px; padding: 4px 8px; flex: 1;">Go</button>
+                <button id="btn-quick-today" class="btn-primary" style="font-size: 12px; padding: 4px 8px; flex: 1; background: #64748b;">Today</button>
+              </div>
+            `;
+          }
+
+          selectorContainer.innerHTML = `
+            <div style="display: flex; gap: 6px;">
+              ${monthHtml}
+              ${dayHtml}
+              ${yearHtml}
+            </div>
+            ${buttonsHtml}
+          `;
+
+          document.body.appendChild(selectorContainer);
+
+          const todayBtn = document.getElementById('btn-quick-today');
+          if (todayBtn) {
+            todayBtn.addEventListener('click', async () => {
+              const nowToday = new Date();
+              currentMonth = nowToday.getMonth();
+              currentYear = nowToday.getFullYear();
+              const todayDay = nowToday.getDate();
+
+              await updateCalendar(currentYear, currentMonth);
+
+              setTimeout(() => {
+                const days = document.querySelectorAll('.calendar-day:not(.empty)');
+                days.forEach(el => {
+                  if (parseInt(el.childNodes[0].textContent) === todayDay) {
+                    el.click();
+                  }
+                });
+              }, 10);
+
+              selectorContainer.remove();
+            });
+          }
+
+          // Update day options when month/year changes
+          const quickMonthSelect = document.getElementById('quick-month-select');
+          const quickYearSelect = document.getElementById('quick-year-select');
+          const quickDaySelect = document.getElementById('quick-day-select');
+
+          const updateDayOptions = () => {
+            const m = parseInt(quickMonthSelect.value);
+            const y = parseInt(quickYearSelect.value);
+            const currentSelectedDay = parseInt(quickDaySelect.value);
+            const daysCount = getDaysInMonth(y, m);
+            
+            let dayOptions = '';
+            for (let d = 1; d <= daysCount; d++) {
+              dayOptions += `<option value="${d}" ${d === Math.min(currentSelectedDay, daysCount) ? 'selected' : ''}>${d}</option>`;
+            }
+            quickDaySelect.innerHTML = dayOptions;
+          };
+
+          quickMonthSelect.addEventListener('change', updateDayOptions);
+          quickYearSelect.addEventListener('change', updateDayOptions);
+
+          document.getElementById('btn-apply-quick-select').addEventListener('click', async () => {
+            const selectedMonth = parseInt(quickMonthSelect.value);
+            const selectedYear = parseInt(quickYearSelect.value);
+            const selectedDay = parseInt(quickDaySelect.value);
+            
+            currentMonth = selectedMonth;
+            currentYear = selectedYear;
+            
+            // Re-render calendar
+            await updateCalendar(currentYear, currentMonth);
+            
+            // Find and click the selected day element to update log details automatically
+            setTimeout(() => {
+              const days = document.querySelectorAll('.calendar-day:not(.empty)');
+              days.forEach(el => {
+                if (parseInt(el.childNodes[0].textContent) === selectedDay) {
+                  el.click();
+                }
+              });
+            }, 10);
+
+            selectorContainer.remove();
+          });
+
+          // Close quick selector on clicking outside
+          const closeHandler = (event) => {
+            if (!selectorContainer.contains(event.target) && event.target !== monthYearLabel) {
+              selectorContainer.remove();
+              document.removeEventListener('click', closeHandler);
+            }
+          };
+          document.addEventListener('click', closeHandler);
+        });
+      }
     }
 
     // Biometrics & Nutrition
@@ -776,11 +934,87 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (ex === 'overhead_press') {
           liftWeightInput.value = 135;
           liftRepsInput.value = 5;
-        } else {
+        } else if (ex === 'bench_press') {
           liftWeightInput.value = 225;
           liftRepsInput.value = 5;
         }
         updateStrength1RMLocal();
+      });
+    }
+
+    // Add custom exercise
+    const btnAddExercise = document.getElementById('btn-add-exercise');
+    if (btnAddExercise && exerciseSelect) {
+      btnAddExercise.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const inputName = prompt("Enter the name of the new exercise:");
+        if (!inputName) return;
+        const formattedName = inputName.trim();
+        if (!formattedName) return;
+
+        // Generate a value key from the string
+        const valueKey = formattedName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+
+        // Check duplicates
+        let exists = false;
+        Array.from(exerciseSelect.options).forEach(opt => {
+          if (opt.value === valueKey) exists = true;
+        });
+
+        if (exists) {
+          alert("An exercise with this name already exists.");
+          return;
+        }
+
+        const newOption = document.createElement('option');
+        newOption.value = valueKey;
+        newOption.textContent = formattedName;
+        exerciseSelect.appendChild(newOption);
+        exerciseSelect.value = valueKey;
+
+        // Reset default inputs
+        document.getElementById('input-lift-weight').value = 135;
+        document.getElementById('input-lift-reps').value = 5;
+        updateStrength1RMLocal();
+      });
+    }
+
+    // Rename exercise
+    const btnRenameExercise = document.getElementById('btn-rename-exercise');
+    if (btnRenameExercise && exerciseSelect) {
+      btnRenameExercise.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const selectedOpt = exerciseSelect.options[exerciseSelect.selectedIndex];
+        if (!selectedOpt) return;
+
+        const currentName = selectedOpt.textContent;
+        const newName = prompt(`Rename "${currentName}" to:`, currentName);
+        if (!newName) return;
+        const formattedNewName = newName.trim();
+        if (!formattedNewName || formattedNewName === currentName) return;
+
+        selectedOpt.textContent = formattedNewName;
+        // Optionally update backend values if needed, but local UI option updates immediately
+        updateStrength1RMLocal();
+      });
+    }
+
+    // Remove exercise
+    const btnRemoveExercise = document.getElementById('btn-remove-exercise');
+    if (btnRemoveExercise && exerciseSelect) {
+      btnRemoveExercise.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const selectedOpt = exerciseSelect.options[exerciseSelect.selectedIndex];
+        if (!selectedOpt) return;
+
+        const currentName = selectedOpt.textContent;
+        const confirmed = await showCustomDialog('This action cannot be undone. Are you sure you want to delete this exercise?', true);
+        if (!confirmed) return;
+
+        selectedOpt.remove();
+        // Trigger select change handler to reload first available exercise values
+        const event = new Event('change');
+        exerciseSelect.dispatchEvent(event);
       });
     }
   }
@@ -788,7 +1022,24 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================
   // CALENDAR LOGIC
   // ==========================================
-  function renderCalendar(year, month) {
+  async function fetchCalendarActivity(year, month) {
+    try {
+      const response = await fetch(`${API_BASE}/users/${USER_ID}/calendar/activity?year=${year}&month=${month + 1}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.error('Error fetching calendar activity:', e);
+    }
+    return {};
+  }
+
+  async function updateCalendar(year, month) {
+    const activityMap = await fetchCalendarActivity(year, month);
+    renderCalendar(year, month, activityMap);
+  }
+
+  function renderCalendar(year, month, activityMap = {}) {
     const daysContainer = document.getElementById('calendar-days-container');
     if (!daysContainer) return;
     daysContainer.innerHTML = '';
@@ -813,35 +1064,81 @@ document.addEventListener('DOMContentLoaded', () => {
       dayEl.classList.add('calendar-day');
       dayEl.textContent = dayNum;
 
-      const currentDayOfWeek = new Date(year, month, dayNum).getDay();
+      // Construct YYYY-MM-DD date string (zero-pad month and day)
+      const paddedMonth = String(month + 1).padStart(2, '0');
+      const paddedDay = String(dayNum).padStart(2, '0');
+      const dateString = `${year}-${paddedMonth}-${paddedDay}`;
+
       const dotWrapper = document.createElement('div');
       dotWrapper.classList.add('day-dots');
 
-      if (trainingSchedule.strengthDays.includes(currentDayOfWeek)) {
-        const dot = document.createElement('span');
-        dot.classList.add('mini-dot', 'strength');
-        dotWrapper.appendChild(dot);
-      }
-      if (trainingSchedule.nutritionDays.includes(currentDayOfWeek)) {
-        const dot = document.createElement('span');
-        dot.classList.add('mini-dot', 'nutrition');
-        dotWrapper.appendChild(dot);
-      }
-      if (trainingSchedule.restDays.includes(currentDayOfWeek)) {
-        const dot = document.createElement('span');
-        dot.classList.add('mini-dot', 'rest');
-        dotWrapper.appendChild(dot);
+      const activity = activityMap[dateString];
+      if (activity) {
+        if (activity.lift) {
+          const dot = document.createElement('span');
+          dot.classList.add('mini-dot', 'strength');
+          dotWrapper.appendChild(dot);
+        }
+        if (activity.biometrics) {
+          const dot = document.createElement('span');
+          dot.classList.add('mini-dot', 'nutrition');
+          dotWrapper.appendChild(dot);
+        }
       }
 
       dayEl.appendChild(dotWrapper);
 
-      if (year === 2026 && month === 5 && dayNum === 11) {
+      // Make today active if year and month match
+      const today = new Date();
+      if (year === today.getFullYear() && month === today.getMonth() && dayNum === today.getDate()) {
         dayEl.classList.add('active');
       }
 
-      dayEl.addEventListener('click', () => {
+      dayEl.addEventListener('click', async () => {
         document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active'));
         dayEl.classList.add('active');
+
+        // Fetch logs for this date
+        const detailsContent = document.getElementById('details-content');
+        if (!detailsContent) return;
+
+        detailsContent.innerHTML = '<span style="font-style: italic;">Loading log details...</span>';
+
+        try {
+          const response = await fetch(`${API_BASE}/users/${USER_ID}/logs/date/${dateString}`);
+          if (response.ok) {
+            const data = await response.json();
+            let html = '';
+
+            if (data.biometrics && data.biometrics.length > 0) {
+              html += '<div style="margin-bottom: 8px;"><strong>Biometrics Logs:</strong><ul style="margin: 4px 0 0 16px; padding: 0; text-align: left;">';
+              data.biometrics.forEach(b => {
+                const bf = b.body_fat !== null ? `, Body Fat: ${b.body_fat}%` : '';
+                html += `<li>Weight: ${b.weight_lbs} lbs (${b.weight_kg} kg), Activity: ${b.activity_level}${bf}</li>`;
+              });
+              html += '</ul></div>';
+            }
+
+            if (data.lifts && data.lifts.length > 0) {
+              html += '<div><strong>Strength Logs:</strong><ul style="margin: 4px 0 0 16px; padding: 0; text-align: left;">';
+              data.lifts.forEach(l => {
+                html += `<li>${l.exercise}: ${l.weight_lifted} lbs for ${l.reps} reps (Est. 1RM: ${l.estimated_1rm} lbs)</li>`;
+              });
+              html += '</ul></div>';
+            }
+
+            if (!html) {
+              html = '<div style="font-style: italic;">No calculations logged on this day.</div>';
+            }
+
+            detailsContent.innerHTML = html;
+          } else {
+            detailsContent.innerHTML = '<span style="color: var(--accent-coral);">Failed to load logs.</span>';
+          }
+        } catch (err) {
+          console.error('Error fetching logs for date:', err);
+          detailsContent.innerHTML = '<span style="color: var(--accent-coral);">Error connecting to server.</span>';
+        }
       });
 
       daysContainer.appendChild(dayEl);
@@ -976,6 +1273,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const consumed = 1100;
       const progressOffset = perimeter - Math.min((consumed / targetCalories) * perimeter, perimeter);
       calorieProgressBar.style.strokeDashoffset = progressOffset;
+
+      // Update calendar to reflect new biometric compliance dot
+      updateCalendar(currentYear, currentMonth);
 
     } catch (err) {
       console.error('API Error:', err);
@@ -1146,6 +1446,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       updateChart(repsRange, predictedLoads);
 
+      // Update calendar to reflect new strength compliance dot
+      updateCalendar(currentYear, currentMonth);
+
     } catch (err) {
       console.error('Strength API Error:', err);
       updateStrength1RMLocal();
@@ -1194,83 +1497,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateChart(labels, data) {
-    const canvas = document.getElementById('strengthCurveChart');
-    if (!canvas) return;
+    const listContainer = document.getElementById('strength-curve-list');
+    if (!listContainer) return;
+    listContainer.innerHTML = '';
 
-    if (strengthCurveChart) {
-      strengthCurveChart.data.labels = labels;
-      strengthCurveChart.data.datasets[0].data = data;
-      strengthCurveChart.update();
-      return;
-    }
+    labels.forEach((rep, idx) => {
+      const load = data[idx];
+      const row = document.createElement('tr');
+      row.style.borderBottom = '1px solid var(--border-light)';
+      row.style.background = idx % 2 === 0 ? '#f8fafc' : 'transparent';
 
-    const ctx = canvas.getContext('2d');
-    strengthCurveChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Predicted Load (lbs)',
-          data: data,
-          borderColor: '#2563eb',
-          backgroundColor: 'rgba(37, 99, 235, 0.05)',
-          borderWidth: 2.5,
-          tension: 0.35,
-          pointBackgroundColor: '#2563eb',
-          pointBorderColor: '#ffffff',
-          pointBorderWidth: 1.5,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#1e293b',
-            titleColor: '#ffffff',
-            bodyColor: '#cbd5e1',
-            cornerRadius: 6,
-            padding: 10,
-            displayColors: false,
-            callbacks: {
-              title: (context) => `Reps: ${context[0].label}`,
-              label: (context) => `Weight: ${parseFloat(context.parsed.y).toFixed(1)} lbs`
-            }
-          }
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: {
-              color: '#94a3b8',
-              font: { family: 'Inter', size: 10 }
-            },
-            title: {
-              display: true,
-              text: 'Repetitions',
-              color: '#64748b',
-              font: { family: 'Inter', size: 10, weight: 600 }
-            }
-          },
-          y: {
-            grid: { color: '#f1f5f9' },
-            ticks: {
-              color: '#94a3b8',
-              font: { family: 'Inter', size: 10 }
-            },
-            title: {
-              display: true,
-              text: 'Load (lbs)',
-              color: '#64748b',
-              font: { family: 'Inter', size: 10, weight: 600 }
-            }
-          }
-        }
-      }
+      row.innerHTML = `
+        <td style="padding: 8px 12px; font-weight: 600; color: var(--text-main);">${rep} Rep${rep > 1 ? 's' : ''}</td>
+        <td style="padding: 8px 12px; font-weight: 600; color: var(--accent-emerald); text-align: right;">${load.toFixed(1)} lbs</td>
+      `;
+      listContainer.appendChild(row);
     });
   }
 
@@ -1412,7 +1653,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const calorieProgressBar = document.getElementById('calorie-progress-bar');
     const mean1rmDisplay = document.getElementById('val-mean-1rm');
 
-    renderCalendar(currentYear, currentMonth);
+    updateCalendar(currentYear, currentMonth);
 
     // Initial todo sync
     todoItems = await fetchTodosFromBackend();

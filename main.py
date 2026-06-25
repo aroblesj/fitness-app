@@ -248,3 +248,54 @@ def get_calendar_activity(
 
     return activity
 
+@app.get("/users/{user_id}/logs/date/{date_string}", response_model=dict)
+def get_logs_by_date(user_id: int, date_string: str, db: Session = Depends(get_db)):
+    try:
+        # Parse the input date string (YYYY-MM-DD)
+        target_date = datetime.strptime(date_string, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    # Retrieve strength logs on this date
+    # In SQLite, date() extracts the date part of the timestamp string/datetime
+    from sqlalchemy import func
+    lifts = db.query(database.StrengthModel).filter(
+        database.StrengthModel.user_id == user_id,
+        func.date(database.StrengthModel.timestamp) == target_date
+    ).all()
+
+    biometrics = db.query(database.BiometricModel).filter(
+        database.BiometricModel.user_id == user_id,
+        func.date(database.BiometricModel.timestamp) == target_date
+    ).all()
+
+    serialized_lifts = []
+    for lift in lifts:
+        serialized_lifts.append({
+            "id": lift.id,
+            "exercise": lift.exercise.replace('_', ' ').title(),
+            "weight_lifted": lift.weight_lifted,
+            "reps": lift.reps,
+            "estimated_1rm": round(lift.estimated_1rm, 1)
+        })
+
+    serialized_biometrics = []
+    for bio in biometrics:
+        serialized_biometrics.append({
+            "id": bio.id,
+            "weight_kg": round(bio.weight_kg, 1),
+            "weight_lbs": round(bio.weight_kg * 2.20462, 1),
+            "height_cm": round(bio.height_cm, 1),
+            "age": bio.age,
+            "sex": bio.sex,
+            "activity_level": bio.activity_level.replace('_', ' ').title(),
+            "body_fat": round(bio.body_fat * 100, 1) if bio.body_fat is not None else None
+        })
+
+    return {
+        "date": date_string,
+        "lifts": serialized_lifts,
+        "biometrics": serialized_biometrics
+    }
+
+
