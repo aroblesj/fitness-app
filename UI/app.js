@@ -20,13 +20,24 @@ document.addEventListener('DOMContentLoaded', () => {
   let isReorderMode = false;
   let draggedIndex = null;
 
-  // Cache original HTML structures to restore them upon logging back in
-  const originalCardContents = {
+  // Cache original HTML structures to restore them upon logging back in (defined as a getter function so it reads the DOM dynamically)
+  const getOriginalCardContents = () => ({
+    calendarBody: originalCardContentsCache?.calendarBody || document.querySelector('.calendar-body').innerHTML,
+    calendarLegend: originalCardContentsCache?.calendarLegend || document.querySelector('.calendar-legend').innerHTML,
+    agendaContent: originalCardContentsCache?.agendaContent || document.querySelector('.agenda-content').innerHTML,
+    biometricsCard: originalCardContentsCache?.biometricsCard || document.querySelector('.biometrics-card').innerHTML,
+    nutritionCard: originalCardContentsCache?.nutritionCard || document.querySelector('.nutrition-card').innerHTML,
+    strengthForm: originalCardContentsCache?.strengthForm || document.querySelector('.strength-form').innerHTML,
+    strengthResults: originalCardContentsCache?.strengthResults || document.querySelector('.one-rep-max-results').innerHTML,
+    strengthCurveCard: originalCardContentsCache?.strengthCurveCard || document.querySelector('.strength-curve-card').innerHTML
+  });
+
+  const originalCardContentsCache = {
     calendarBody: document.querySelector('.calendar-body').innerHTML,
     calendarLegend: document.querySelector('.calendar-legend').innerHTML,
     agendaContent: document.querySelector('.agenda-content').innerHTML,
-    biometricsGrid: document.querySelector('.biometrics-grid').innerHTML,
-    nutritionContent: document.querySelector('.nutrition-content').innerHTML,
+    biometricsCard: document.querySelector('.biometrics-card').innerHTML,
+    nutritionCard: document.querySelector('.nutrition-card').innerHTML,
     strengthForm: document.querySelector('.strength-form').innerHTML,
     strengthResults: document.querySelector('.one-rep-max-results').innerHTML,
     strengthCurveCard: document.querySelector('.strength-curve-card').innerHTML
@@ -127,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
       profileDropdown.innerHTML = `
         <a href="#" class="dropdown-item" id="settings-btn">
           <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-          Basic Settings
+          Settings
         </a>
         <hr class="dropdown-divider">
         <a href="#" class="dropdown-item logout" id="logout-btn">
@@ -211,11 +222,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Restore HTML containers
+    const originalCardContents = getOriginalCardContents();
     document.querySelector('.calendar-body').innerHTML = originalCardContents.calendarBody;
     document.querySelector('.calendar-legend').innerHTML = originalCardContents.calendarLegend;
     document.querySelector('.agenda-content').innerHTML = originalCardContents.agendaContent;
-    document.querySelector('.biometrics-grid').innerHTML = originalCardContents.biometricsGrid;
-    document.querySelector('.nutrition-content').innerHTML = originalCardContents.nutritionContent;
+    document.querySelector('.biometrics-card').innerHTML = originalCardContents.biometricsCard;
+    document.querySelector('.nutrition-card').innerHTML = originalCardContents.nutritionCard;
     document.querySelector('.strength-form').innerHTML = originalCardContents.strengthForm;
     document.querySelector('.one-rep-max-results').innerHTML = originalCardContents.strengthResults;
     document.querySelector('.strength-curve-card').innerHTML = originalCardContents.strengthCurveCard;
@@ -232,8 +244,132 @@ document.addEventListener('DOMContentLoaded', () => {
     e.stopPropagation();
     userProfileBtn.classList.remove('active');
     profileDropdown.classList.remove('show');
-    const currentUserName = profileName ? profileName.textContent : 'arobles';
-    alert(`User Profile Settings:\n- Username: ${currentUserName}\n- User ID: ${USER_ID}\n- Platform: Recomped Labs`);
+
+    const modal = document.getElementById('settings-modal');
+    const usernameInput = document.getElementById('settings-username');
+    const btnCancel = document.getElementById('btn-settings-cancel');
+    const btnSave = document.getElementById('btn-settings-save');
+    const btnTriggerPassword = document.getElementById('btn-trigger-password-modal');
+
+    // Prepopulate username
+    usernameInput.value = profileName ? profileName.textContent : 'arobles';
+
+    modal.classList.add('active');
+
+    // Toggle Dropdown Options
+    const toggleBtn = document.getElementById('btn-toggle-avatar-selector');
+    const dropdown = document.getElementById('avatar-selector-dropdown');
+    const previewContainer = document.getElementById('settings-current-avatar-preview');
+    const chevron = toggleBtn.querySelector('.chevron-down-avatar');
+    
+    // Read current selected icon from header avatar
+    const headerAvatar = document.getElementById('header-profile-avatar');
+    const currentIconEl = headerAvatar.querySelector('i');
+    let selectedIconClass = currentIconEl ? Array.from(currentIconEl.classList).find(c => c.startsWith('fa-')) : 'fa-dumbbell';
+
+    // Synchronize preview
+    previewContainer.innerHTML = `<i class="fa-solid ${selectedIconClass}"></i>`;
+
+    const toggleDropdown = (e) => {
+      e.stopPropagation();
+      const isVisible = dropdown.style.display === 'grid';
+      dropdown.style.display = isVisible ? 'none' : 'grid';
+      chevron.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+    };
+
+    toggleBtn.addEventListener('click', toggleDropdown);
+
+    // Option Clicking
+    const options = dropdown.querySelectorAll('.avatar-option');
+    const handleAvatarOptionClick = (e) => {
+      e.stopPropagation();
+      selectedIconClass = e.currentTarget.getAttribute('data-icon');
+      previewContainer.innerHTML = `<i class="fa-solid ${selectedIconClass}"></i>`;
+    };
+    options.forEach(opt => {
+      opt.addEventListener('click', handleAvatarOptionClick);
+    });
+
+    // Close settings modal helper
+    const closeSettings = () => {
+      modal.classList.remove('active');
+      dropdown.style.display = 'none';
+      chevron.style.transform = 'rotate(0deg)';
+      btnCancel.removeEventListener('click', closeSettings);
+      btnSave.removeEventListener('click', saveSettings);
+      toggleBtn.removeEventListener('click', toggleDropdown);
+      btnTriggerPassword.removeEventListener('click', openPasswordModal);
+      options.forEach(opt => opt.removeEventListener('click', handleAvatarOptionClick));
+    };
+
+    const saveSettings = async () => {
+      const newUsername = usernameInput.value.trim();
+
+      if (!newUsername) {
+        alert('Username cannot be empty.');
+        return;
+      }
+
+      // Perform local updates immediately
+      if (profileName) {
+        profileName.textContent = newUsername;
+      }
+      
+      // Update header avatar icon class
+      if (headerAvatar) {
+        headerAvatar.innerHTML = `<i class="fa-solid ${selectedIconClass}" style="font-size: 12px;"></i>`;
+      }
+
+      closeSettings();
+      await showCustomDialog('Settings updated successfully!');
+    };
+
+    // Password Modal Logic
+    const passwordModal = document.getElementById('password-modal');
+    const oldPasswordInput = document.getElementById('password-old-input');
+    const newPasswordInput = document.getElementById('password-new-input');
+    const btnPasswordCancel = document.getElementById('btn-password-cancel');
+    const btnPasswordUpdate = document.getElementById('btn-password-update');
+
+    const openPasswordModal = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      oldPasswordInput.value = '';
+      newPasswordInput.value = '';
+      passwordModal.classList.add('active');
+
+      btnPasswordCancel.addEventListener('click', closePasswordModal);
+      btnPasswordUpdate.addEventListener('click', updatePassword);
+    };
+
+    const closePasswordModal = () => {
+      passwordModal.classList.remove('active');
+      btnPasswordCancel.removeEventListener('click', closePasswordModal);
+      btnPasswordUpdate.removeEventListener('click', updatePassword);
+    };
+
+    const updatePassword = async () => {
+      const oldPassword = oldPasswordInput.value.trim();
+      const newPassword = newPasswordInput.value.trim();
+
+      if (!oldPassword || !newPassword) {
+        await showCustomDialog('Please fill out all password fields.');
+        return;
+      }
+
+      const correctOldPassword = 'admin123'; // Standard mock password
+      if (oldPassword !== correctOldPassword) {
+        await showCustomDialog('The "Current Password" is incorrect. Please try again.');
+        return;
+      }
+
+      closePasswordModal();
+      await showCustomDialog('Password updated successfully!');
+    };
+
+    btnTriggerPassword.addEventListener('click', openPasswordModal);
+    btnCancel.addEventListener('click', closeSettings);
+    btnSave.addEventListener('click', saveSettings);
   }
 
   if (closeToastBtn) {
@@ -261,8 +397,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.calendar-body').innerHTML = lockedHTML;
     document.querySelector('.calendar-legend').innerHTML = '';
     document.querySelector('.agenda-content').innerHTML = lockedHTML;
-    document.querySelector('.biometrics-grid').innerHTML = lockedHTML;
-    document.querySelector('.nutrition-content').innerHTML = lockedHTML;
+    document.querySelector('.biometrics-card').innerHTML = lockedHTML;
+    document.querySelector('.nutrition-card').innerHTML = lockedHTML;
     document.querySelector('.strength-form').innerHTML = lockedHTML;
     document.querySelector('.one-rep-max-results').innerHTML = lockedHTML;
     document.querySelector('.strength-curve-card').innerHTML = lockedHTML;
@@ -1577,49 +1713,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (filter === 'all' || filter === 'strength') {
-      const diagramCard = document.createElement('div');
-      diagramCard.className = 'resource-item-card diagram-card';
-      diagramCard.setAttribute('data-category', 'strength');
-      diagramCard.innerHTML = `
-        <h4 class="diagram-title">Interactive Muscle Engagement</h4>
-        <p class="diagram-subtitle">Hover over muscle groups to view primary lifts</p>
-        <div class="anatomy-svg-wrapper">
-          <svg viewBox="0 0 200 240" class="anatomy-svg" id="muscle-svg">
-            <circle cx="100" cy="25" r="12" fill="#E2E8F0" class="muscle-group" data-muscle="Neck"></circle>
-            <path d="M 80 40 L 120 40 L 135 55 L 115 58 L 100 48 L 85 58 L 65 55 Z" fill="#CBD5E1" class="muscle-group" data-muscle="Shoulders"></path>
-            <path d="M 85 58 L 100 48 L 115 58 L 115 85 L 85 85 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Chest"></path>
-            <path d="M 80 85 L 68 62 L 85 58 L 100 70 L 115 58 L 132 62 L 120 85 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Lats"></path>
-            <rect x="86" y="88" width="28" height="32" rx="4" fill="#CBD5E1" class="muscle-group" data-muscle="Abs"></rect>
-            <path d="M 72 135 L 97 135 L 97 185 L 75 185 Z" fill="#94A3B8" class="muscle-group active-muscle" data-muscle="Quads"></path>
-            <path d="M 103 135 L 128 135 L 125 185 L 103 185 Z" fill="#94A3B8" class="muscle-group active-muscle" data-muscle="Quads"></path>
-            <path d="M 70 120 H 130 V 134 H 70 Z" fill="#CBD5E1" class="muscle-group" data-muscle="Glutes"></path>
-            <path d="M 76 195 L 95 195 L 90 230 L 80 230 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Calves"></path>
-            <path d="M 105 195 L 124 195 L 120 230 L 110 230 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Calves"></path>
-          </svg>
-          <div class="anatomy-overlay" id="anatomy-overlay-text">
-            Hover on highlight: <span class="highlighted-muscle">Quads</span>
-            <div class="primary-exercise">Targeted by: Back Squat</div>
-          </div>
+      const tipCard = document.createElement('div');
+      tipCard.className = 'resource-item-card daily-tip-card';
+      tipCard.style.cssText = 'background-color: #ffffff; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 0px; width: 100%; box-sizing: border-box; flex: 1; display: flex; flex-direction: column;';
+      tipCard.innerHTML = `
+        <div class="tip-header" style="display: flex; align-items: center; gap: 8px; color: var(--accent-coral); font-weight: 700; margin-bottom: 8px; font-family: 'Outfit', sans-serif;">
+          <img src="brain_icon.png?v=1" style="width: 18px; height: 18px; object-fit: contain;" alt="Brain">
+          <h4 style="margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif; font-weight: 700;">Did You Know?</h4>
         </div>
+        <p class="tip-body" style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; font-family: 'Inter', sans-serif; flex: 1;">Even a 2% drop in total body hydration can lead to a 10% decrease in peak muscular strength. Drink 500ml of water 30 minutes before your lower body workouts!</p>
       `;
-      scrollContainer.appendChild(diagramCard);
-
-      const mGroups = diagramCard.querySelectorAll('.muscle-group');
-      const anatomyOverlay = diagramCard.querySelector('#anatomy-overlay-text');
-      mGroups.forEach(group => {
-        group.addEventListener('mouseenter', () => {
-          mGroups.forEach(m => m.classList.remove('active-muscle'));
-          group.classList.add('active-muscle');
-          const groupName = group.getAttribute('data-muscle');
-          const details = muscleExercises[groupName];
-          if (details && anatomyOverlay) {
-            anatomyOverlay.innerHTML = `
-              Hover on highlight: <span class="highlighted-muscle">${groupName}</span>
-              <div class="primary-exercise">Targeted by: ${details.exercise}</div>
-            `;
-          }
-        });
-      });
+      scrollContainer.appendChild(tipCard);
     }
   }
 

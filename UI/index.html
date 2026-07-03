@@ -10,9 +10,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
   <!-- Chart.js CDN for interactive charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons for high-quality standard UI icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- FontAwesome Icons for standard high-quality brain vector -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Material Design Icons for verified side-profile brain glyph -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
 </head>
 <body>
   <div class="app-container">
@@ -27,6 +33,10 @@
 
       <div class="header-right">
         <div class="user-profile" id="user-profile-btn">
+          <!-- Circular User Profile Avatar Icon -->
+          <div class="profile-avatar" id="header-profile-avatar" style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-emerald), #059669); color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);">
+            <i class="fa-solid fa-dumbbell" style="font-size: 12px;"></i>
+          </div>
           <div class="profile-info">
             <span class="profile-name" id="profile-name">arobles</span>
             <span class="profile-role" id="profile-role" style="display: none;"></span>
@@ -35,9 +45,9 @@
           
           <!-- Dropdown Menu -->
           <div class="profile-dropdown" id="profile-dropdown">
-            <a href="#" class="dropdown-item">
+            <a href="#" class="dropdown-item" id="settings-menu-btn">
               <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-              Basic Settings
+              Settings
             </a>
             <hr class="dropdown-divider">
             <a href="#" class="dropdown-item logout" id="logout-btn">
@@ -131,15 +141,10 @@
         <div class="bento-card biometrics-card loading-container">
           <div class="loading-overlay" id="biometrics-loading-overlay"><div class="spinner"></div></div>
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 class="card-title" style="margin: 0; text-align: left; flex-grow: 1;">Body Statistics</h2>
             <div class="unit-selector">
               <button class="unit-btn active" data-unit="imperial">Imperial</button>
               <button class="unit-btn" data-unit="metric">Metric</button>
-            </div>
-            <h2 class="card-title" style="margin: 0; text-align: center; flex-grow: 1;">Body Statistics</h2>
-            <div class="goal-selector">
-              <button class="goal-btn active" data-goal="cut">Cut</button>
-              <button class="goal-btn" data-goal="maintain">Maintain</button>
-              <button class="goal-btn" data-goal="bulk">Bulk</button>
             </div>
           </div>
           
@@ -177,8 +182,21 @@
                 </select>
               </div>
 
-              <div class="select-wrapper">
-                <label for="select-activity">Activity Level</label>
+              <div class="select-wrapper" style="position: relative;">
+                <label for="select-activity" style="display: flex; align-items: center; gap: 4px;">
+                  <span>Activity Level</span>
+                  <span class="info-icon-wrapper" onmouseenter="this.querySelector('.activity-tooltip').style.visibility='visible'; this.querySelector('.activity-tooltip').style.opacity='1';" onmouseleave="this.querySelector('.activity-tooltip').style.visibility='hidden'; this.querySelector('.activity-tooltip').style.opacity='0';" style="display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; width: 14px; height: 14px; border-radius: 50%; background-color: var(--text-light); color: white; font-family: 'Inter', sans-serif; font-size: 9px; font-weight: bold; line-height: 1; user-select: none;">
+                    i
+                    <span class="activity-tooltip" style="visibility: hidden; width: 360px; background-color: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; text-align: left; padding: 14px 16px; border-radius: 8px; position: absolute; z-index: 1010; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity 0.2s, visibility 0.2s; box-shadow: var(--shadow-lg); font-size: 13px; line-height: 1.6; pointer-events: none; font-weight: normal; text-transform: none; letter-spacing: normal;">
+                      <strong style="display: block; margin-bottom: 8px; color: #1e3a8a; font-size: 14px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">Activity Level Legend</strong>
+                      <div style="margin-bottom: 8px;">• <strong style="color: #0f172a;">Sedentary:</strong> <span style="color: #475569;">Desk job, &lt; 5,000 steps/day. No structured exercise.</span></div>
+                      <div style="margin-bottom: 8px;">• <strong style="color: #0f172a;">Lightly Active:</strong> <span style="color: #475569;">1.5–3 hours/wk of light exercise (e.g., walking, yoga) or 5,000–7,500 steps/day.</span></div>
+                      <div style="margin-bottom: 8px;">• <strong style="color: #0f172a;">Moderately Active:</strong> <span style="color: #475569;">3–5 hours/wk of moderate training (e.g., lifting, cycling) or 7,500–10,000 steps/day.</span></div>
+                      <div style="margin-bottom: 8px;">• <strong style="color: #0f172a;">Highly Active:</strong> <span style="color: #475569;">6–7 hours/wk of intense training (heavy lifting, sports) or 10,000–12,500 steps/day.</span></div>
+                      <div style="margin-bottom: 0;">• <strong style="color: #0f172a;">Extremely Active:</strong> <span style="color: #475569;">&gt; 12.5 hours/wk of heavy sports or highly physical labor.</span></div>
+                    </span>
+                  </span>
+                </label>
                 <select id="select-activity" class="custom-select">
                   <option value="sedentary">Sedentary (1.2x)</option>
                   <option value="lightly_active" selected>Lightly Active (1.375x)</option>
@@ -194,8 +212,27 @@
         </div>
 
         <!-- Macronutrients & Energy Targets -->
-        <div class="bento-card nutrition-card loading-container">
+        <div class="bento-card nutrition-card loading-container" style="padding-top: 0;">
           <div class="loading-overlay" id="nutrition-loading-overlay"><div class="spinner"></div></div>
+          <div class="card-header" style="display: flex; justify-content: center; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-light); padding: 12px 0; margin-bottom: 12px; margin-left: -24px; margin-right: -24px;">
+            <div class="goal-selector" style="display: flex; gap: 8px;">
+              <button class="goal-btn active" data-goal="cut">Cut</button>
+              <button class="goal-btn" data-goal="maintain">Maintain</button>
+              <button class="goal-btn" data-goal="bulk">Bulk</button>
+            </div>
+            <span class="info-icon-wrapper" onmouseenter="this.querySelector('.macro-tooltip').style.visibility='visible'; this.querySelector('.macro-tooltip').style.opacity='1';" onmouseleave="this.querySelector('.macro-tooltip').style.visibility='hidden'; this.querySelector('.macro-tooltip').style.opacity='0';" style="display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; width: 14px; height: 14px; border-radius: 50%; background-color: var(--text-light); color: white; font-family: 'Inter', sans-serif; font-size: 9px; font-weight: bold; line-height: 1; user-select: none; margin-left: 2px;">
+              i
+              <span class="macro-tooltip" style="visibility: hidden; width: 380px; background-color: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; text-align: left; padding: 14px 16px; border-radius: 8px; position: absolute; z-index: 1010; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); opacity: 0; transition: opacity 0.2s, visibility 0.2s; box-shadow: var(--shadow-lg); font-size: 13px; line-height: 1.6; pointer-events: none; font-weight: normal; text-transform: none; letter-spacing: normal;">
+                <strong style="display: block; margin-bottom: 8px; color: #1e3a8a; font-size: 14px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">Nutrition & Target Legend</strong>
+                <div style="margin-bottom: 8px;">• <strong style="color: #0f172a;">Cut:</strong> <span style="color: #475569;">Caloric deficit to promote body fat loss while preserving muscle.</span></div>
+                <div style="margin-bottom: 8px;">• <strong style="color: #0f172a;">Maintain:</strong> <span style="color: #475569;">Eating at TDEE to maintain current weight and recompose body.</span></div>
+                <div style="margin-bottom: 8px;">• <strong style="color: #0f172a;">Bulk:</strong> <span style="color: #475569;">Caloric surplus to support active muscle growth and strength building.</span></div>
+                <div style="margin-bottom: 8px;">• <strong style="color: #0f172a;">BMR (Basal Metabolic Rate):</strong> <span style="color: #475569;">Energy expended at complete rest to keep vital organs functioning.</span></div>
+                <div style="margin-bottom: 8px;">• <strong style="color: #0f172a;">TDEE (Total Daily Energy Expenditure):</strong> <span style="color: #475569;">BMR adjusted for physical activity; baseline calories burned daily.</span></div>
+                <div style="margin-bottom: 0;">• <strong style="color: #0f172a;">kcal (Kilocalorie):</strong> <span style="color: #475569;">The standard metric unit of measurement for food energy (calories).</span></div>
+              </span>
+            </span>
+          </div>
           <div class="nutrition-content">
             <div class="calorie-progress-wrapper">
               <div class="calorie-ring-container">
@@ -327,14 +364,6 @@
           </div>
         </div>
         
-        <!-- Daily Tip Callout Card -->
-        <div class="daily-tip-card">
-          <div class="tip-header">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            <h4>Did You Know?</h4>
-          </div>
-          <p class="tip-body">Even a 2% drop in total body hydration can lead to a 10% decrease in peak muscular strength. Drink 500ml of water 30 minutes before your lower body workouts!</p>
-        </div>
       </section>
 
       <!-- COLUMN 3: Informational Resources Sidebar -->
@@ -351,6 +380,8 @@
             <button class="filter-tab" data-filter="nutrition">Nutrition</button>
             <button class="filter-tab" data-filter="recovery">Recovery</button>
           </div>
+
+
 
           <div class="resources-scroll-container">
             <!-- Featured Video Player Card -->
@@ -369,38 +400,7 @@
               </div>
             </div>
 
-            <!-- Interactive Muscle Diagram -->
-            <div class="resource-item-card diagram-card" data-category="strength">
-              <h4 class="diagram-title">Interactive Muscle Engagement</h4>
-              <p class="diagram-subtitle">Hover over muscle groups to view primary lifts</p>
-              <div class="anatomy-svg-wrapper">
-                <!-- Inline SVG vector model representing posterior / anterior chain -->
-                <svg viewBox="0 0 200 240" class="anatomy-svg" id="muscle-svg">
-                  <!-- Head -->
-                  <circle cx="100" cy="25" r="12" fill="#E2E8F0" class="muscle-group" data-muscle="Neck"></circle>
-                  <!-- Shoulders/Traps -->
-                  <path d="M 80 40 L 120 40 L 135 55 L 115 58 L 100 48 L 85 58 L 65 55 Z" fill="#CBD5E1" class="muscle-group" data-muscle="Shoulders"></path>
-                  <!-- Chest -->
-                  <path d="M 85 58 L 100 48 L 115 58 L 115 85 L 85 85 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Chest"></path>
-                  <!-- Back / Lats -->
-                  <path d="M 80 85 L 68 62 L 85 58 L 100 70 L 115 58 L 132 62 L 120 85 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Lats"></path>
-                  <!-- Core / Abs -->
-                  <rect x="86" y="88" width="28" height="32" rx="4" fill="#CBD5E1" class="muscle-group" data-muscle="Abs"></rect>
-                  <!-- Quads / Thighs -->
-                  <path d="M 72 135 L 97 135 L 97 185 L 75 185 Z" fill="#94A3B8" class="muscle-group active-muscle" data-muscle="Quads"></path>
-                  <path d="M 103 135 L 128 135 L 125 185 L 103 185 Z" fill="#94A3B8" class="muscle-group active-muscle" data-muscle="Quads"></path>
-                  <!-- Hamstrings / Glutes (Posterior representations) -->
-                  <path d="M 70 120 H 130 V 134 H 70 Z" fill="#CBD5E1" class="muscle-group" data-muscle="Glutes"></path>
-                  <!-- Calves -->
-                  <path d="M 76 195 L 95 195 L 90 230 L 80 230 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Calves"></path>
-                  <path d="M 105 195 L 124 195 L 120 230 L 110 230 Z" fill="#E2E8F0" class="muscle-group" data-muscle="Calves"></path>
-                </svg>
-                <div class="anatomy-overlay" id="anatomy-overlay-text">
-                  Hover on highlight: <span class="highlighted-muscle">Quads</span>
-                  <div class="primary-exercise">Targeted by: Back Squat</div>
-                </div>
-              </div>
-            </div>
+
 
             <!-- Articles Feed -->
             <div class="resource-item-card article-card" data-category="strength">
@@ -488,7 +488,7 @@
   </div>
 
   <!-- Custom Dialog Modal -->
-  <div class="modal-overlay" id="custom-dialog-modal">
+  <div class="modal-overlay" id="custom-dialog-modal" style="z-index: 1100;">
     <div class="modal-content" style="max-width: 400px; padding: 24px; text-align: center;">
       <h4 id="custom-dialog-title" style="margin-bottom: 12px; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-main);">Notice</h4>
       <p id="custom-dialog-message" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; text-align: center; word-break: break-word;"></p>
@@ -499,7 +499,83 @@
     </div>
   </div>
 
+  <!-- Settings Modal Window -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-content" style="max-width: 440px; padding: 28px;">
+      <h3 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: var(--text-main);">Settings</h3>
+      <p style="margin: 0 0 20px 0; font-size: 13px; color: var(--text-muted);">Manage your account access details.</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+        <div style="display: flex; flex-direction: column; gap: 6px; position: relative;">
+          <div id="btn-toggle-avatar-selector" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; background-color: #f8fafc; user-select: none; font-family: 'Inter', sans-serif;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-weight: 600; color: var(--text-main);">Select Profile Icon</span>
+              <div id="settings-current-avatar-preview" style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-emerald), #059669); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px;">
+                <i class="fa-solid fa-dumbbell"></i>
+              </div>
+            </div>
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="chevron-down-avatar" style="transition: transform 0.2s; color: var(--text-muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          
+          <!-- Avatar Icon Selector Dropdown/Grid -->
+          <div id="avatar-selector-dropdown" style="display: none; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: white; margin-top: 4px; box-shadow: var(--shadow-sm); z-index: 10;">
+            <div class="avatar-option" data-icon="fa-dumbbell" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-dumbbell"></i></div>
+            <div class="avatar-option" data-icon="fa-running" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-running"></i></div>
+            <div class="avatar-option" data-icon="fa-bicycle" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-bicycle"></i></div>
+            <div class="avatar-option" data-icon="fa-heart-pulse" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-heart-pulse"></i></div>
+            <div class="avatar-option" data-icon="fa-fire" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-fire"></i></div>
+            <div class="avatar-option" data-icon="fa-apple-alt" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-apple-alt"></i></div>
+            <div class="avatar-option" data-icon="fa-trophy" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-trophy"></i></div>
+            <div class="avatar-option" data-icon="fa-weight-scale" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-weight-scale"></i></div>
+            <div class="avatar-option" data-icon="fa-stopwatch" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-stopwatch"></i></div>
+            <div class="avatar-option" data-icon="fa-droplet" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-droplet"></i></div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-main); font-family: 'Inter', sans-serif;">Username</label>
+          <input type="text" id="settings-username" value="arobles" style="width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 13px; outline: none; background-color: #f8fafc; color: var(--text-main); font-family: 'Inter', sans-serif;">
+        </div>
+
+        <button id="btn-trigger-password-modal" class="filter-tab" style="width: 100%; padding: 10px 12px; margin: 0; font-size: 13px; text-align: left; font-weight: 600; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background-color: #f8fafc; color: var(--text-main); font-family: 'Inter', sans-serif;">
+          <span>Change Password</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="color: var(--text-muted);"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button id="btn-settings-cancel" class="filter-tab" style="padding: 10px 20px; margin: 0; font-size: 13px;">Cancel</button>
+        <button id="btn-settings-save" class="btn-primary" style="width: auto; padding: 10px 24px; margin: 0; font-size: 13px;">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Update Modal Window -->
+  <div class="modal-overlay" id="password-modal" style="z-index: 1050;">
+    <div class="modal-content" style="max-width: 400px; padding: 28px;">
+      <h3 style="margin: 0 0 4px 0; font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700; color: var(--text-main);">Change Password</h3>
+      <p style="margin: 0 0 20px 0; font-size: 13px; color: var(--text-muted);">Enter details below to update your security password.</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-main); font-family: 'Inter', sans-serif;">Current Password</label>
+          <input type="password" id="password-old-input" placeholder="Enter current password" style="width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 13px; outline: none; background-color: #f8fafc; color: var(--text-main); font-family: 'Inter', sans-serif;">
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-main); font-family: 'Inter', sans-serif;">New Password</label>
+          <input type="password" id="password-new-input" placeholder="Enter new password" style="width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 13px; outline: none; background-color: #f8fafc; color: var(--text-main); font-family: 'Inter', sans-serif;">
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button id="btn-password-cancel" class="filter-tab" style="padding: 10px 20px; margin: 0; font-size: 13px;">Cancel</button>
+        <button id="btn-password-update" class="btn-primary" style="width: auto; padding: 10px 24px; margin: 0; font-size: 13px;">Update Password</button>
+      </div>
+    </div>
+  </div>
+
   <!-- JavaScript File -->
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=31"></script>
 </body>
 </html>
