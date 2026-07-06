@@ -32,6 +32,19 @@ def create_or_update_biometrics(
     biometrics: schemas.BiometricCreate,
     db: Session = Depends(get_db)
 ):
+    try:
+        # Validate user biometrics input ranges
+        UserBiometrics(
+            age=biometrics.age,
+            weight_kg=int(biometrics.weight_kg),
+            height_cm=int(biometrics.height_cm),
+            sex=biometrics.sex,
+            activity_level=biometrics.activity_level,
+            body_fat=biometrics.body_fat
+        )
+    except BiometricInputError as error:
+        raise HTTPException(status_code=400, detail=error.message)
+
     db_biometrics = crud.upsert_user_biometrics(
         db=db,
         user_id=user_id,

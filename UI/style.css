@@ -163,7 +163,7 @@ body {
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   cursor: pointer;
   position: relative;
   padding: 4px 8px;
@@ -384,28 +384,48 @@ body {
 }
 
 .calendar-day {
-  aspect-ratio: 1.2;
-  border-radius: 6px;
+  aspect-ratio: 1.0;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 500;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   position: relative;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1.5px solid transparent;
+}
+
+.day-number {
+  line-height: 1;
+  margin-top: 0;
 }
 
 .calendar-day:hover:not(.empty) {
-  background-color: #f1f5f9;
+  background-color: #e2e8f0;
+  transform: translateY(-1px) scale(1.06);
+  z-index: 5;
+  box-shadow: var(--shadow-sm);
+  border-radius: 50% !important;
 }
 
 .calendar-day.active {
-  background-color: var(--text-main);
-  color: white;
-  font-weight: 600;
-  box-shadow: 0 4px 10px rgba(30, 41, 59, 0.25);
+  background-color: #cbd5e1;
+  color: var(--text-main);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(30, 41, 59, 0.1);
+  border: 2px solid var(--accent-emerald) !important;
+  border-radius: 50% !important;
+}
+
+.calendar-day.today:not(.active) {
+  border: 2px solid var(--accent-emerald) !important;
+  color: var(--accent-emerald) !important;
+  font-weight: 700 !important;
+  border-radius: 50% !important;
 }
 
 .calendar-day.empty {
@@ -414,27 +434,27 @@ body {
 
 .day-dots {
   display: flex;
-  gap: 2px;
-  position: absolute;
-  bottom: 2px;
-}
-
-.calendar-day.active .day-dots {
-  bottom: 1px;
+  gap: 4px;
 }
 
 .mini-dot {
-  width: 3.5px;
-  height: 3.5px;
+  width: 8px;
+  height: 8px;
+}
+
+.mini-dot.strength { 
+  background-color: #1d4ed8; 
+  border-radius: 50%;
+}
+.mini-dot.nutrition { 
+  background-color: #d97706; 
+  border-radius: 0px;
+}
+.mini-dot.rest { 
+  background-color: var(--accent-amber); 
   border-radius: 50%;
 }
 
-.mini-dot.strength { background-color: #2563eb; }
-.mini-dot.nutrition { background-color: #10b981; }
-.mini-dot.rest { background-color: var(--accent-amber); }
-
-.calendar-day.active .mini-dot.strength { background-color: #bfdbfe; }
-.calendar-day.active .mini-dot.nutrition { background-color: #a7f3d0; }
 
 .calendar-legend {
   display: flex;
@@ -453,15 +473,23 @@ body {
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  width: 10px;
+  height: 10px;
   display: inline-block;
 }
 
-.dot-strength { background-color: #2563eb; }
-.dot-nutrition { background-color: #10b981; }
-.dot-rest { background-color: var(--accent-amber); }
+.dot-strength { 
+  background-color: #1d4ed8; 
+  border-radius: 50%;
+}
+.dot-nutrition { 
+  background-color: #d97706; 
+  border-radius: 0px;
+}
+.dot-rest { 
+  background-color: var(--accent-amber); 
+  border-radius: 50%;
+}
 
 /* AGENDA WIDGET */
 .agenda-card {
@@ -785,6 +813,7 @@ body {
   background: #fafafb;
   outline: none;
   cursor: pointer;
+  height: 38px;
 }
 
 /* NUTRITION WIDGET */
@@ -982,6 +1011,7 @@ body {
   border: 1px solid var(--border-light);
   font-size: 13px;
   outline: none;
+  height: 38px;
 }
 
 .one-rep-max-results {
@@ -1874,5 +1904,44 @@ body {
 .info-icon-wrapper:hover .activity-tooltip {
   visibility: visible !important;
   opacity: 1 !important;
+}
+
+/* Theme Color Selector Styles */
+.theme-option:hover {
+  transform: scale(1.1);
+}
+
+.theme-option.active {
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 2px var(--text-main);
+  transform: scale(1.15);
+}
+
+/* Hide spin-buttons on all number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+/* Info Pulse Dot & Tooltip Styles */
+.info-pulse-wrapper:hover .pulse-tooltip {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+@keyframes pulse-ring-animation {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.0);
+    opacity: 0;
+  }
 }
 

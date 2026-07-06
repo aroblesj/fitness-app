@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=29">
   <!-- Chart.js CDN for interactive charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons for high-quality standard UI icons -->
@@ -168,7 +168,7 @@
                 </div>
               </div>
               <div class="input-wrapper">
-                <label for="input-fat">Body Fat (%)</label>
+                <label for="input-fat">Body Fat (%) (Optional)</label>
                 <input type="number" id="input-fat" class="custom-input" min="3" max="50" value="18">
               </div>
             </div>
@@ -297,39 +297,66 @@
         <div class="strength-lab-wrapper">
           <div class="bento-card 1rm-card loading-container">
             <div class="loading-overlay" id="strength-loading-overlay"><div class="spinner"></div></div>
-            <div class="card-header">
+            <div class="card-header" style="position: relative; display: flex; justify-content: flex-start; align-items: center; gap: 6px; width: 100%;">
               <h2 class="card-title">Strength Analytics</h2>
+              <!-- Static Info Badge Tooltip -->
+              <span class="info-icon-wrapper" onmouseenter="this.querySelector('.activity-tooltip').style.visibility='visible'; this.querySelector('.activity-tooltip').style.opacity='1';" onmouseleave="this.querySelector('.activity-tooltip').style.visibility='hidden'; this.querySelector('.activity-tooltip').style.opacity='0';" style="display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; width: 14px; height: 14px; border-radius: 50%; background-color: var(--text-light); color: white; font-family: 'Inter', sans-serif; font-size: 9px; font-weight: bold; line-height: 1; user-select: none;">
+                i
+                <!-- Unified Info Tooltip -->
+                <span class="activity-tooltip" style="visibility: hidden; opacity: 0; width: 300px; background-color: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; text-align: left; padding: 14px 16px; border-radius: 8px; position: absolute; z-index: 1010; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); transition: opacity 0.2s, visibility 0.2s; box-shadow: var(--shadow-lg); font-size: 13px; line-height: 1.6; pointer-events: none; font-weight: normal; text-transform: none; letter-spacing: normal;">
+                  <strong style="display: block; margin-bottom: 8px; color: #1e3a8a; font-size: 14px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">📅 Calendar Integration</strong>
+                  Every time you log a lift, it's saved in the Calendar. Click on any blue dot in the calendar to view your full history.
+                </span>
+              </span>
             </div>
             
             <div class="strength-form">
               <div class="form-row">
                 <div class="input-wrapper">
-                  <label for="select-exercise" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>Exercise</span>
-                    <span style="display: flex; gap: 6px;">
-                      <button id="btn-add-exercise" style="background: transparent; border: none; cursor: pointer; color: var(--accent-emerald); font-size: 11px; font-weight: 600;">+ Add</button>
-                      <button id="btn-rename-exercise" style="background: transparent; border: none; cursor: pointer; color: var(--text-muted); font-size: 11px; font-weight: 600;">✎ Rename</button>
-                      <button id="btn-remove-exercise" style="background: transparent; border: none; cursor: pointer; color: var(--accent-coral); font-size: 11px; font-weight: 600;">✗ Remove</button>
-                    </span>
-                  </label>
-                  <select id="select-exercise" class="custom-select">
-                    <option value="back_squat">Barbell Back Squat</option>
-                    <option value="bench_press" selected>Barbell Bench Press</option>
-                    <option value="deadlift">Barbell Conventional Deadlift</option>
-                    <option value="overhead_press">Barbell Overhead Press</option>
-                  </select>
+                  <label for="select-exercise">Exercise</label>
+                  <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                    <select id="select-exercise" class="custom-select" style="flex: 1;">
+                      <option value="back_squat">Barbell Back Squat</option>
+                      <option value="bench_press" selected>Barbell Bench Press</option>
+                      <option value="deadlift">Barbell Conventional Deadlift</option>
+                      <option value="overhead_press">Barbell Overhead Press</option>
+                    </select>
+                    <!-- Exercise Kebab Options -->
+                    <div class="kebab-menu-container" style="position: relative; flex-shrink: 0;">
+                      <button id="btn-exercise-kebab" class="btn-kebab" title="Options" style="height: 38px; width: 32px; border: 1px solid var(--border-light); border-radius: 8px; background: #fafafb; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--text-muted); cursor: pointer; transition: all 0.2s;">⋮</button>
+                      <div id="exercise-kebab-dropdown" class="kebab-dropdown" style="min-width: 100px;">
+                        <button id="btn-add-exercise" class="kebab-dropdown-item" style="color: #f1f5f9;">Add</button>
+                        <button id="btn-rename-exercise" class="kebab-dropdown-item" style="color: #f1f5f9;">Rename</button>
+                        <button id="btn-remove-exercise" class="kebab-dropdown-item" style="color: var(--accent-coral);">Remove</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div class="form-row inputs-split">
+              <div class="form-row inputs-split" style="margin-bottom: 24px; position: relative;">
                 <div class="input-wrapper">
                   <label for="input-lift-weight">Weight (lbs)</label>
-                  <input type="number" id="input-lift-weight" class="custom-input" min="10" max="800" value="225">
+                  <input type="number" id="input-lift-weight" class="custom-input" min="2" max="500" value="225">
                 </div>
                 <div class="input-wrapper">
                   <label for="input-lift-reps">Reps Logged</label>
-                  <input type="number" id="input-lift-reps" class="custom-input" min="1" max="12" value="5">
+                  <select id="input-lift-reps" class="custom-select">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5" selected>5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                  </select>
                 </div>
+                <span id="weight-error-msg" style="color: var(--accent-coral); font-size: 11px; font-weight: 600; display: none; position: absolute; top: 62px; left: 0; right: 0; width: 100%; z-index: 5; line-height: 1.3; white-space: normal;">Please enter a weight between 2 and 500 lbs.</span>
               </div>
             </div>
 
@@ -531,6 +558,20 @@
             <div class="avatar-option" data-icon="fa-droplet" style="aspect-ratio: 1; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-main); font-size: 16px; transition: all 0.2s;"><i class="fa-solid fa-droplet"></i></div>
           </div>
         </div>
+        <!-- Color Theme Selector -->
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-main); font-family: 'Inter', sans-serif;">App Theme Color</label>
+          <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background-color: #f8fafc;">
+            <div style="display: flex; gap: 8px; width: 100%; justify-content: space-around;">
+              <div class="theme-option" data-theme="blue" style="width: 22px; height: 22px; border-radius: 50%; background-color: #2563eb; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" title="Royal Blue"></div>
+              <div class="theme-option" data-theme="emerald" style="width: 22px; height: 22px; border-radius: 50%; background-color: #059669; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" title="Emerald Green"></div>
+              <div class="theme-option" data-theme="violet" style="width: 22px; height: 22px; border-radius: 50%; background-color: #7c3aed; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" title="Violet Purple"></div>
+              <div class="theme-option" data-theme="teal" style="width: 22px; height: 22px; border-radius: 50%; background-color: #0d9488; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" title="Deep Teal"></div>
+              <div class="theme-option" data-theme="rose" style="width: 22px; height: 22px; border-radius: 50%; background-color: #be123c; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" title="Rose Burgundy"></div>
+              <div class="theme-option" data-theme="steel" style="width: 22px; height: 22px; border-radius: 50%; background-color: #4b5563; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" title="Steel Charcoal"></div>
+            </div>
+          </div>
+        </div>
 
         <div style="display: flex; flex-direction: column; gap: 6px;">
           <label style="font-size: 12px; font-weight: 600; color: var(--text-main); font-family: 'Inter', sans-serif;">Username</label>
@@ -576,6 +617,6 @@
   </div>
 
   <!-- JavaScript File -->
-  <script src="app.js?v=31"></script>
+  <script src="app.js?v=68"></script>
 </body>
 </html>

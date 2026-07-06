@@ -6,14 +6,74 @@ document.addEventListener('DOMContentLoaded', () => {
   const USER_ID = 1;
   const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8000' : 'http://127.0.0.1:8000';
 
-  let currentYear = 2026;
-  let currentMonth = 5; // June (0-indexed)
+  const initialDate = new Date();
+  let currentYear = initialDate.getFullYear();
+  let currentMonth = initialDate.getMonth(); // Dynamically show current month/year
   let activeGoal = 'cut';
   let activeUnit = 'imperial';
   let activeMuscleGroup = 'Quads';
   let strengthCurveChart = null;
   let isLoggedIn = true;
   let logoutTimeout = null;
+
+  const themeColors = {
+    blue: {
+      primary: '#2563eb',
+      light: '#eff6ff',
+      border: '#bfdbfe',
+      bgPrimary: '#f0f4ff',
+      borderLight: '#dbeafe'
+    },
+    emerald: {
+      primary: '#059669',
+      light: '#ecfdf5',
+      border: '#a7f3d0',
+      bgPrimary: '#f0fdf4',
+      borderLight: '#d1fae5'
+    },
+    violet: {
+      primary: '#7c3aed',
+      light: '#f5f3ff',
+      border: '#ddd6fe',
+      bgPrimary: '#f5f3ff',
+      borderLight: '#ede9fe'
+    },
+    teal: {
+      primary: '#0d9488',
+      light: '#f0fdfa',
+      border: '#99f6e4',
+      bgPrimary: '#f0fdfa',
+      borderLight: '#ccfbf1'
+    },
+    rose: {
+      primary: '#be123c',
+      light: '#fff1f2',
+      border: '#fecdd3',
+      bgPrimary: '#fff1f2',
+      borderLight: '#ffe4e6'
+    },
+    steel: {
+      primary: '#4b5563',
+      light: '#f9fafb',
+      border: '#e5e7eb',
+      bgPrimary: '#f3f4f6',
+      borderLight: '#e5e7eb'
+    }
+  };
+
+  let activeTheme = localStorage.getItem('recomped_selected_theme') || 'blue';
+
+  function applyTheme(themeName) {
+    const theme = themeColors[themeName] || themeColors.blue;
+    document.documentElement.style.setProperty('--accent-emerald', theme.primary);
+    document.documentElement.style.setProperty('--accent-emerald-light', theme.light);
+    document.documentElement.style.setProperty('--accent-emerald-border', theme.border);
+    document.documentElement.style.setProperty('--bg-primary', theme.bgPrimary);
+    document.documentElement.style.setProperty('--border-light', theme.borderLight);
+    localStorage.setItem('recomped_selected_theme', themeName);
+  }
+
+  applyTheme(activeTheme);
 
   // To-Do List State
   let todoItems = [];
@@ -131,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', () => {
     userProfileBtn.classList.remove('active');
     profileDropdown.classList.remove('show');
+    document.querySelectorAll('.kebab-dropdown').forEach(d => d.classList.remove('show'));
   });
 
   function setupProfileDropdown() {
@@ -290,6 +351,31 @@ document.addEventListener('DOMContentLoaded', () => {
       opt.addEventListener('click', handleAvatarOptionClick);
     });
 
+    // Theme options setup
+    const themeOptions = modal.querySelectorAll('.theme-option');
+    let selectedTheme = activeTheme;
+
+    // Highlight current active theme
+    themeOptions.forEach(opt => {
+      if (opt.getAttribute('data-theme') === selectedTheme) {
+        opt.classList.add('active');
+      } else {
+        opt.classList.remove('active');
+      }
+    });
+
+    const handleThemeOptionClick = (e) => {
+      e.stopPropagation();
+      themeOptions.forEach(o => o.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      selectedTheme = e.currentTarget.getAttribute('data-theme');
+      applyTheme(selectedTheme); // Real-time preview!
+    };
+
+    themeOptions.forEach(opt => {
+      opt.addEventListener('click', handleThemeOptionClick);
+    });
+
     // Close settings modal helper
     const closeSettings = () => {
       modal.classList.remove('active');
@@ -300,6 +386,10 @@ document.addEventListener('DOMContentLoaded', () => {
       toggleBtn.removeEventListener('click', toggleDropdown);
       btnTriggerPassword.removeEventListener('click', openPasswordModal);
       options.forEach(opt => opt.removeEventListener('click', handleAvatarOptionClick));
+      themeOptions.forEach(opt => opt.removeEventListener('click', handleThemeOptionClick));
+      
+      // Revert theme color scheme to original activeTheme (if they canceled/closed without saving)
+      applyTheme(activeTheme);
     };
 
     const saveSettings = async () => {
@@ -309,6 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Username cannot be empty.');
         return;
       }
+
+      // Lock down the selected theme as activeTheme
+      activeTheme = selectedTheme;
+      applyTheme(activeTheme);
 
       // Perform local updates immediately
       if (profileName) {
@@ -321,7 +415,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       closeSettings();
-      await showCustomDialog('Settings updated successfully!');
     };
 
     // Password Modal Logic
@@ -574,9 +667,9 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="kebab-menu-container">
             <button class="btn-kebab" id="kebab-btn-${item.id}">⋮</button>
             <div class="kebab-dropdown" id="kebab-dropdown-${item.id}">
-              <button class="kebab-dropdown-item btn-rename" data-index="${index}">Rename</button>
-              <button class="kebab-dropdown-item btn-delete" data-index="${index}">Delete</button>
-              <button class="kebab-dropdown-item btn-reorder">Reorder</button>
+              <button class="kebab-dropdown-item btn-rename" data-index="${index}" style="color: #f1f5f9;">Rename</button>
+              <button class="kebab-dropdown-item btn-reorder" style="color: #f1f5f9;">Reorder</button>
+              <button class="kebab-dropdown-item btn-delete" data-index="${index}" style="color: var(--accent-coral);">Remove</button>
             </div>
           </div>
         `;
@@ -762,6 +855,33 @@ document.addEventListener('DOMContentLoaded', () => {
           globalDropdown.style.top = `${rect.top - 40}px`;
           globalDropdown.style.left = `${rect.right - 90}px`;
         }
+      });
+    }
+
+    // Exercise Kebab Dropdown
+    const btnExerciseKebab = document.getElementById('btn-exercise-kebab');
+    const exerciseDropdown = document.getElementById('exercise-kebab-dropdown');
+    
+    if (btnExerciseKebab && exerciseDropdown) {
+      btnExerciseKebab.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.kebab-dropdown').forEach(d => {
+          if (d !== exerciseDropdown) d.classList.remove('show');
+        });
+        exerciseDropdown.classList.toggle('show');
+        if (exerciseDropdown.classList.contains('show')) {
+          const rect = btnExerciseKebab.getBoundingClientRect();
+          // Position fixed below the button
+          exerciseDropdown.style.top = `${rect.bottom + 4}px`;
+          exerciseDropdown.style.left = `${rect.right - 100}px`;
+        }
+      });
+      
+      // Close dropdown when items are clicked
+      exerciseDropdown.querySelectorAll('.kebab-dropdown-item').forEach(item => {
+        item.addEventListener('click', () => {
+          exerciseDropdown.classList.remove('show');
+        });
       });
     }
 
@@ -1198,7 +1318,11 @@ document.addEventListener('DOMContentLoaded', () => {
     for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
       const dayEl = document.createElement('div');
       dayEl.classList.add('calendar-day');
-      dayEl.textContent = dayNum;
+      
+      const numSpan = document.createElement('span');
+      numSpan.classList.add('day-number');
+      numSpan.textContent = dayNum;
+      dayEl.appendChild(numSpan);
 
       // Construct YYYY-MM-DD date string (zero-pad month and day)
       const paddedMonth = String(month + 1).padStart(2, '0');
@@ -1227,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Make today active if year and month match
       const today = new Date();
       if (year === today.getFullYear() && month === today.getMonth() && dayNum === today.getDate()) {
-        dayEl.classList.add('active');
+        dayEl.classList.add('active', 'today');
       }
 
       dayEl.addEventListener('click', async () => {
@@ -1415,7 +1539,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       console.error('API Error:', err);
-      calculateNutritionLocal();
+      showCustomDialog(err.message || 'An error occurred during verification. Please try again.');
     } finally {
       if (biometricsOverlay) biometricsOverlay.classList.remove('active');
       if (nutritionOverlay) nutritionOverlay.classList.remove('active');
@@ -1556,14 +1680,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (strengthOverlay) strengthOverlay.classList.add('active');
 
     try {
-      const safeWeight = Math.min(weight, 500);
-
       const response = await fetch(`${API_BASE}/strength/?user_id=${USER_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           exercise: exercise,
-          weight_lifted: safeWeight,
+          weight_lifted: weight,
           reps: reps
         })
       });
@@ -1587,7 +1709,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       console.error('Strength API Error:', err);
-      updateStrength1RMLocal();
+      showCustomDialog(err.message || 'An error occurred during verification. Please try again.');
     } finally {
       if (strengthOverlay) strengthOverlay.classList.remove('active');
     }
@@ -1601,8 +1723,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const weight = parseFloat(liftWeightInput.value);
     const reps = parseInt(liftRepsInput.value);
+    const errorMsg = document.getElementById('weight-error-msg');
 
-    if (isNaN(weight) || isNaN(reps) || weight <= 0 || reps <= 0) return;
+    if (isNaN(weight) || isNaN(reps)) return;
+
+    if (weight < 2 || weight > 500) {
+      if (errorMsg) {
+        errorMsg.style.display = 'block';
+        liftWeightInput.style.borderColor = 'var(--accent-coral)';
+      }
+      return;
+    } else {
+      if (errorMsg) {
+        errorMsg.style.display = 'none';
+        liftWeightInput.style.borderColor = 'var(--border-light)';
+      }
+    }
 
     const epley = weight * (1 + (reps / 30));
     const brzycki = weight / (1.0278 - (0.0278 * reps));
