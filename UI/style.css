@@ -969,17 +969,41 @@ body {
 /* STRENGTH LAB LAYOUT */
 .strength-lab-wrapper {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: 1fr;
   gap: 20px;
   min-width: 0;
   margin-top: 10px;
 }
 
-.strength-form {
+.1rm-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.1rm-card-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  width: 100%;
+  margin-top: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 768px) {
+  .1rm-card-layout {
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
+.strength-form {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  margin-bottom: 24px;
+  align-items: flex-end;
+  flex: 1 1 auto;
 }
 
 .form-row {
@@ -1018,19 +1042,23 @@ body {
   background-color: #f8fafc;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
-  padding: 14px;
+  padding: 10px 16px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex: none;
+  margin: 0;
 }
 
 .primary-1rm-display {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   flex: 1;
-  padding: 16px 0;
+  padding: 0;
 }
 
 .calc-label {
@@ -1943,5 +1971,16 @@ input[type="number"] {
     transform: scale(2.0);
     opacity: 0;
   }
+}
+
+/* Force centering of Predicted Strength Curve table cells */
+.strength-curve-card table th,
+.strength-curve-card table td {
+  text-align: center !important;
+}
+
+.strength-curve-card table th:first-child,
+.strength-curve-card table td:first-child {
+  text-align: left !important;
 }
 

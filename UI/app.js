@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     agendaContent: originalCardContentsCache?.agendaContent || document.querySelector('.agenda-content').innerHTML,
     biometricsCard: originalCardContentsCache?.biometricsCard || document.querySelector('.biometrics-card').innerHTML,
     nutritionCard: originalCardContentsCache?.nutritionCard || document.querySelector('.nutrition-card').innerHTML,
-    strengthForm: originalCardContentsCache?.strengthForm || document.querySelector('.strength-form').innerHTML,
+    strengthForm: originalCardContentsCache?.strengthForm || document.querySelector('.inputs-col-1rm').innerHTML,
     strengthResults: originalCardContentsCache?.strengthResults || document.querySelector('.one-rep-max-results').innerHTML,
     strengthCurveCard: originalCardContentsCache?.strengthCurveCard || document.querySelector('.strength-curve-card').innerHTML
   });
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     agendaContent: document.querySelector('.agenda-content').innerHTML,
     biometricsCard: document.querySelector('.biometrics-card').innerHTML,
     nutritionCard: document.querySelector('.nutrition-card').innerHTML,
-    strengthForm: document.querySelector('.strength-form').innerHTML,
+    strengthForm: document.querySelector('.inputs-col-1rm').innerHTML,
     strengthResults: document.querySelector('.one-rep-max-results').innerHTML,
     strengthCurveCard: document.querySelector('.strength-curve-card').innerHTML
   };
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.agenda-content').innerHTML = originalCardContents.agendaContent;
     document.querySelector('.biometrics-card').innerHTML = originalCardContents.biometricsCard;
     document.querySelector('.nutrition-card').innerHTML = originalCardContents.nutritionCard;
-    document.querySelector('.strength-form').innerHTML = originalCardContents.strengthForm;
+    document.querySelector('.inputs-col-1rm').innerHTML = originalCardContents.strengthForm;
     document.querySelector('.one-rep-max-results').innerHTML = originalCardContents.strengthResults;
     document.querySelector('.strength-curve-card').innerHTML = originalCardContents.strengthCurveCard;
 
@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.agenda-content').innerHTML = lockedHTML;
     document.querySelector('.biometrics-card').innerHTML = lockedHTML;
     document.querySelector('.nutrition-card').innerHTML = lockedHTML;
-    document.querySelector('.strength-form').innerHTML = lockedHTML;
+    document.querySelector('.inputs-col-1rm').innerHTML = lockedHTML;
     document.querySelector('.one-rep-max-results').innerHTML = lockedHTML;
     document.querySelector('.strength-curve-card').innerHTML = lockedHTML;
 
@@ -1172,7 +1172,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (liftWeightInput && liftRepsInput) {
       liftWeightInput.addEventListener('input', updateStrength1RMLocal);
-      liftRepsInput.addEventListener('input', updateStrength1RMLocal);
+      liftWeightInput.addEventListener('change', updateStrength1RMLocal);
+      liftRepsInput.addEventListener('change', updateStrength1RMLocal);
     }
 
     if (exerciseSelect) {
@@ -1700,7 +1701,23 @@ document.addEventListener('DOMContentLoaded', () => {
       mean1rmDisplay.innerHTML = `${data.estimated_1rm.toFixed(1)} <span class="calc-unit">lbs</span>`;
 
       const repsRange = Array.from({length: 12}, (_, i) => i + 1);
-      const predictedLoads = repsRange.map(r => data.strength_curve[r] || (data.estimated_1rm / (1 + (r - 1) * 0.033)));
+      const rawCurve = data.strength_curve;
+      const curve = typeof rawCurve === 'string' ? JSON.parse(rawCurve) : rawCurve;
+      
+      let decayMultiplier = 0.033;
+      if (exercise === 'overhead_press') {
+        decayMultiplier = 0.039;
+      } else if (exercise === 'deadlift') {
+        decayMultiplier = 0.028;
+      } else if (exercise === 'back_squat') {
+        decayMultiplier = 0.031;
+      }
+
+      const predictedLoads = repsRange.map(r => {
+        if (curve && curve[r] !== undefined) return curve[r];
+        if (curve && curve[String(r)] !== undefined) return curve[String(r)];
+        return data.estimated_1rm / (1 + (r - 1) * decayMultiplier);
+      });
 
       updateChart(repsRange, predictedLoads);
 
@@ -1769,21 +1786,39 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateChart(labels, data) {
-    const listContainer = document.getElementById('strength-curve-list');
-    if (!listContainer) return;
-    listContainer.innerHTML = '';
+    const headerRow = document.getElementById('strength-curve-header-row');
+    const weightRow = document.getElementById('strength-curve-weight-row');
+    if (!headerRow || !weightRow) return;
+
+    // Reset back to initial headers
+    headerRow.innerHTML = '<th style="padding: 10px 8px; font-weight: 600; text-align: left; background-color: #f8fafc; border-right: 1px solid var(--border-light); width: 70px;">Reps</th>';
+    weightRow.innerHTML = '<td style="padding: 10px 8px; font-weight: 600; text-align: left; background-color: #f8fafc; border-right: 1px solid var(--border-light); width: 70px; color: var(--text-main);">Weight (lbs)</td>';
 
     labels.forEach((rep, idx) => {
       const load = data[idx];
-      const row = document.createElement('tr');
-      row.style.borderBottom = '1px solid var(--border-light)';
-      row.style.background = idx % 2 === 0 ? '#f8fafc' : 'transparent';
+      const isNotLast = idx < labels.length - 1;
+      
+      // Add rep header column
+      const th = document.createElement('th');
+      th.style.padding = '10px 4px';
+      th.style.fontWeight = '700';
+      th.style.color = 'var(--text-muted)';
+      th.style.fontSize = '13px';
+      th.style.textAlign = 'center';
+      if (isNotLast) th.style.borderRight = '1px solid var(--border-light)';
+      th.textContent = rep;
+      headerRow.appendChild(th);
 
-      row.innerHTML = `
-        <td style="padding: 8px 12px; font-weight: 600; color: var(--text-main);">${rep} Rep${rep > 1 ? 's' : ''}</td>
-        <td style="padding: 8px 12px; font-weight: 600; color: var(--accent-emerald); text-align: right;">${load.toFixed(1)} lbs</td>
-      `;
-      listContainer.appendChild(row);
+      // Add weight cell column
+      const td = document.createElement('td');
+      td.style.padding = '10px 4px';
+      td.style.fontWeight = '700';
+      td.style.color = 'var(--accent-emerald)';
+      td.style.fontSize = '13px';
+      td.style.textAlign = 'center';
+      if (isNotLast) td.style.borderRight = '1px solid var(--border-light)';
+      td.textContent = Math.round(load);
+      weightRow.appendChild(td);
     });
   }
 
@@ -1973,10 +2008,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await response.json();
         mean1rmDisplay.innerHTML = `${data.estimated.toFixed(1)} <span class="calc-unit">lbs</span>`;
         const repsRange = Array.from({length: 12}, (_, i) => i + 1);
-        const predictedLoads = repsRange.map(r => data.strength_curve[r] || (data.estimated / (1 + (r - 1) * 0.033)));
+        const rawCurve = data.strength_curve;
+        const curve = typeof rawCurve === 'string' ? JSON.parse(rawCurve) : rawCurve;
+        
+        let decayMultiplier = 0.033;
+        const ex = exerciseSelect.value;
+        if (ex === 'overhead_press') {
+          decayMultiplier = 0.039;
+        } else if (ex === 'deadlift') {
+          decayMultiplier = 0.028;
+        } else if (ex === 'back_squat') {
+          decayMultiplier = 0.031;
+        }
+
+        const predictedLoads = repsRange.map(r => {
+          if (curve && curve[r] !== undefined) return curve[r];
+          if (curve && curve[String(r)] !== undefined) return curve[String(r)];
+          return data.estimated / (1 + (r - 1) * decayMultiplier);
+        });
+
         updateChart(repsRange, predictedLoads);
       } else {
-        await updateStrength1RM();
+        updateStrength1RMLocal();
       }
     } catch (e) {
       console.warn('Strength baseline fetch failed, using offline mode:', e);

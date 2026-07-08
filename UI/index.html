@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=29">
+  <link rel="stylesheet" href="style.css?v=53">
   <!-- Chart.js CDN for interactive charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons for high-quality standard UI icons -->
@@ -19,6 +19,17 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Material Design Icons for verified side-profile brain glyph -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
+  <style>
+    /* Force centering of Predicted Strength Curve table cells */
+    .strength-curve-card table th,
+    .strength-curve-card table td {
+      text-align: center !important;
+    }
+    .strength-curve-card table th:first-child,
+    .strength-curve-card table td:first-child {
+      text-align: left !important;
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
@@ -295,7 +306,7 @@
 
         <!-- Strength 1RM Calculation Lab -->
         <div class="strength-lab-wrapper">
-          <div class="bento-card 1rm-card loading-container">
+          <div class="bento-card card-1rm loading-container">
             <div class="loading-overlay" id="strength-loading-overlay"><div class="spinner"></div></div>
             <div class="card-header" style="position: relative; display: flex; justify-content: flex-start; align-items: center; gap: 6px; width: 100%;">
               <h2 class="card-title">Strength Analytics</h2>
@@ -310,9 +321,12 @@
               </span>
             </div>
             
-            <div class="strength-form">
-              <div class="form-row">
-                <div class="input-wrapper">
+            <!-- Symmetrical Content Layout (Inputs left, 1RM right) -->
+            <div class="layout-1rm-card" style="display: flex; flex-direction: row; gap: 32px; width: 100%; margin-top: 16px; align-items: stretch;">
+              <!-- Left Column: Inputs Stack -->
+              <div class="inputs-col-1rm" style="flex: 1; display: flex; flex-direction: column; gap: 16px;">
+                <!-- Exercise Input -->
+                <div class="input-wrapper" style="width: 100%;">
                   <label for="select-exercise">Exercise</label>
                   <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
                     <select id="select-exercise" class="custom-select" style="flex: 1;">
@@ -332,41 +346,48 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- Weight and Reps Sub-Row -->
+                <div style="display: flex; gap: 16px; width: 100%;">
+                  <!-- Weight Input -->
+                  <div class="input-wrapper" style="flex: 1;">
+                    <label for="input-lift-weight">Weight (lbs)</label>
+                    <input type="number" id="input-lift-weight" class="custom-input" min="2" max="500" value="225" style="width: 100%;">
+                  </div>
+                  <!-- Reps Logged Input -->
+                  <div class="input-wrapper" style="flex: 1; position: relative;">
+                    <label for="input-lift-reps">Reps Logged</label>
+                    <select id="input-lift-reps" class="custom-select" style="width: 100%;">
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5" selected>5</option>
+                      <option value="6">6</option>
+                      <option value="7">7</option>
+                      <option value="8">8</option>
+                      <option value="9">9</option>
+                      <option value="10">10</option>
+                      <option value="11">11</option>
+                      <option value="12">12</option>
+                    </select>
+                    <span id="weight-error-msg" style="color: var(--accent-coral); font-size: 11px; font-weight: 600; display: none; position: absolute; top: 62px; left: -120px; right: 0; width: 240px; z-index: 5; line-height: 1.3; white-space: normal;">Please enter a weight between 2 and 500 lbs.</span>
+                  </div>
+                </div>
               </div>
 
-              <div class="form-row inputs-split" style="margin-bottom: 24px; position: relative;">
-                <div class="input-wrapper">
-                  <label for="input-lift-weight">Weight (lbs)</label>
-                  <input type="number" id="input-lift-weight" class="custom-input" min="2" max="500" value="225">
+              <!-- Right Column: Results Stack -->
+              <div class="results-col-1rm" style="flex: 1; display: flex; flex-direction: column;">
+                <!-- Estimated 1RM Box (centered text stack, matches Left Col height) -->
+                <div class="one-rep-max-results" style="margin: 0; padding: 24px; background-color: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 100%; box-sizing: border-box; width: 100%;">
+                  <span class="calc-label" style="font-size: 13px; font-weight: 600; color: var(--text-muted); margin: 0;">Estimated 1RM</span>
+                  <span class="calc-value" id="val-mean-1rm" style="font-size: 24px; font-weight: 800; color: var(--text-main); margin: 4px 0 0 0;">259.7 <span class="calc-unit" style="font-size: 14px; font-weight: 600; color: var(--text-muted);">lbs</span></span>
                 </div>
-                <div class="input-wrapper">
-                  <label for="input-lift-reps">Reps Logged</label>
-                  <select id="input-lift-reps" class="custom-select">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5" selected>5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                    <option value="12">12</option>
-                  </select>
-                </div>
-                <span id="weight-error-msg" style="color: var(--accent-coral); font-size: 11px; font-weight: 600; display: none; position: absolute; top: 62px; left: 0; right: 0; width: 100%; z-index: 5; line-height: 1.3; white-space: normal;">Please enter a weight between 2 and 500 lbs.</span>
               </div>
             </div>
 
-            <div class="one-rep-max-results">
-              <div class="primary-1rm-display">
-                <span class="calc-label">Estimated 1RM</span>
-                <span class="calc-value" id="val-mean-1rm">259.7 <span class="calc-unit">lbs</span></span>
-              </div>
-              <button id="btn-log-lift" class="btn-primary" style="width: 100%; margin-top: 12px;">Log Lift</button>
-            </div>
+            <!-- Log Lift Button (Full Card Width) -->
+            <button id="btn-log-lift" class="btn-primary" style="width: 100%; height: 38px; margin-top: 20px; font-weight: 700; font-size: 13px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; box-sizing: border-box;">Log Lift</button>
           </div>
 
           <!-- Strength Curve List -->
@@ -375,16 +396,19 @@
               <h2 class="card-title">Predicted Strength Curve</h2>
               <span class="subtitle-text" style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Predicted loads for Reps 1-12</span>
             </div>
-            <div class="chart-container" style="display: block; max-height: 250px; overflow-y: auto; width: 100%;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <div class="chart-container" style="width: 100%; padding: 4px 0;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: center;">
                 <thead>
-                  <tr style="border-bottom: 2px solid var(--border-light); text-align: left; color: var(--text-muted);">
-                    <th style="padding: 6px 12px; font-weight: 600;">Reps</th>
-                    <th style="padding: 6px 12px; font-weight: 600; text-align: right;">Weight</th>
+                  <tr id="strength-curve-header-row" style="border-bottom: 1px solid var(--border-light); color: var(--text-muted); text-align: center;">
+                    <th style="padding: 10px 8px; font-weight: 600; text-align: left; background-color: #f8fafc; border-right: 1px solid var(--border-light); width: 70px;">Reps</th>
+                    <!-- JS will inject rep columns dynamically -->
                   </tr>
                 </thead>
-                <tbody id="strength-curve-list">
-                  <!-- JS will inject table rows here -->
+                <tbody>
+                  <tr id="strength-curve-weight-row" style="text-align: center;">
+                    <td style="padding: 10px 8px; font-weight: 600; text-align: left; background-color: #f8fafc; border-right: 1px solid var(--border-light); width: 70px; color: var(--text-main);">Weight (lbs)</td>
+                    <!-- JS will inject weight columns dynamically -->
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -617,6 +641,6 @@
   </div>
 
   <!-- JavaScript File -->
-  <script src="app.js?v=68"></script>
+  <script src="app.js?v=100"></script>
 </body>
 </html>
