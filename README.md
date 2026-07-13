@@ -1,24 +1,40 @@
-# Fitness & Nutrition App
+# Fitness & Nutrition Dashboard
 
-A customizable, automated application designed to track and optimize personal physical training, daily nutrition targets, and metabolic progress. 
+A local, single-page web app to track your nutrition, workout logs, daily habits, and read fitness research articles and video guides. 
 
-⚠️ **Project Status: Under Active Development**
-*This repository contains the foundational logic for the application as the system architecture is being built out from the ground up.*
+It connects a vanilla JavaScript frontend to a FastAPI/SQLite backend, using live RSS feeds to keep your reading hub updated.
 
----
+## Features
 
-## Intended Core Features
+* **Calorie & Macro Calculator:** Update your profile (weight, body fat %, height, activity level) and get instant target macros and daily calorie limits for cutting, bulking, or maintenance.
+* **Lift Tracker & 1RM Calculator:** Log your working sets, view your strength progression chart (Chart.js), and estimate your 1-rep max (1RM) using Epley and Brzycki formulas.
+* **Habit Calendar & Todo List:** Track workouts, habits, and tasks on a weekly/monthly calendar and checklist.
+* **Research Feed & Video Player:** Read articles and watch YouTube videos pulled dynamically from *Stronger by Science* and *Barbell Medicine* RSS feeds. Videos open directly in a custom modal player.
 
-When fully developed, the application is designed to act as a centralized system to manage the following core components:
+## Tech Stack
 
-* **Dynamic Metric Tracking:** A profile manager to input, store, and dynamically update individual body metrics.
-* **Intelligent Target Calculations:** Automated calculation engines to evaluate physical baselines and compute progress strategies based on variable activity levels.
-* **Nutrition Planning:** Structures to establish custom macronutrient distribution targets and safely offer guidance on physique goals.
-* **Structured Workout Management:** Systems to offer training protocols, calculate strength progress, and estimate current 1RM.
+* **Frontend:** HTML5, CSS (glassmorphic styling, fully responsive sidebar layout), and JavaScript. Served with a custom Python helper that disables browser caching.
+* **Backend:** FastAPI, SQLite, SQLAlchemy, and Uvicorn.
+* **Feed Parser:** Python service that scans science feeds in real-time, extracts embedded YouTube videos, and filters them into your sidebar feed.
 
----
+## Setup & Run
 
-## Technical Overview
+### 1. Install Dependencies
+Make sure you have Python 3.8+ installed, then run:
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
-* **Data Integrity:** The application utilizes custom verification logic to inspect raw inputs immediately at the boundary layer, ensuring the system never logs corrupted data.
-* **Modular Design:** Built with a decoupled backend architecture, allowing the underlying logic to function independently of any user interface or web framework.
+### 2. Start the Backend API (Port 8000)
+```bash
+uvicorn main:app --port 8000 --reload
+```
+
+### 3. Start the Frontend Server (Port 8080)
+```bash
+python run_frontend.py
+```
+
+Now open [http://localhost:8080](http://localhost:8080) in your browser.
