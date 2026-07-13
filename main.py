@@ -6,6 +6,7 @@ import crud
 import schemas
 from nutrition_engine import UserBiometrics, BiometricInputError
 from strength_engine import StrengthAnalytics, StrengthInputError
+import feed_service
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -310,5 +311,17 @@ def get_logs_by_date(user_id: int, date_string: str, db: Session = Depends(get_d
         "lifts": serialized_lifts,
         "biometrics": serialized_biometrics
     }
+
+@app.get("/api/resources")
+def get_resource_feed():
+    try:
+        return feed_service.feed_service.get_feed()
+    except Exception as e:
+        # Graceful fallback to avoid server crash
+        return {
+            "tip": feed_service.DEFAULT_TIPS[0],
+            "videos": feed_service.DEFAULT_VIDEOS,
+            "articles": feed_service.DEFAULT_ARTICLES
+        }
 
 

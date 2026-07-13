@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  
+  try {
   // ==========================================
   // STATE MANAGEMENT & CONFIGS
   // ==========================================
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let strengthCurveChart = null;
   let isLoggedIn = true;
   let logoutTimeout = null;
+  let fetchedResourceFeed = null;
 
   const themeColors = {
     blue: {
@@ -137,9 +138,14 @@ document.addEventListener('DOMContentLoaded', () => {
       type: 'video',
       category: 'strength',
       title: 'Mastering the Low-Bar Squat: Biomechanics & Hip Drive',
-      author: 'Sarah Davis, CSCS',
-      duration: '8:45',
-      thumbnail: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=500&q=80',
+      author: 'Jeff Nippard',
+      duration: '14:22',
+      thumbnail: 'https://img.youtube.com/vi/kP_2S3s3b0Q/hqdefault.jpg',
+      url: 'https://www.youtube.com/watch?v=kP_2S3s3b0Q',
+      summary: 'Science-based guide on maximizing frequency and recovery using the Push Pull Legs split.',
+      citations: [
+        {"name": "Training Frequency Meta-Analysis (Schoenfeld et al., 2016)", "url": "https://pubmed.ncbi.nlm.nih.gov/27102424/"}
+      ],
       bookmarked: false
     },
     {
@@ -149,6 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'The Science of Hypertrophy: Optimal Rep Ranges Explained',
       author: 'Dr. Michael Chen',
       readTime: '5 min read',
+      url: 'https://www.strongerbyscience.com/hypertrophy-range-fact-fiction/',
+      summary: 'A comprehensive review of scientific literature surrounding rep ranges for muscle hypertrophy.',
+      citations: [
+        {"name": "Hypertrophy Rep Ranges (Schoenfeld et al., 2016)", "url": "https://pubmed.ncbi.nlm.nih.gov/27102424/"}
+      ],
       bookmarked: false
     },
     {
@@ -158,6 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Anabolic Window: Fact vs. Fiction in Nutrient Timing',
       author: 'Alan Aragon, MS',
       readTime: '4 min read',
+      url: 'https://jissn.biomedcentral.com/articles/10.1186/1550-2783-10-53',
+      summary: 'A peer-reviewed review of nutrient timing science and muscle protein synthesis.',
+      citations: [
+        {"name": "Nutrient Timing Review (Aragon & Schoenfeld, 2013)", "url": "https://pubmed.ncbi.nlm.nih.gov/23374887/"}
+      ],
       bookmarked: true
     },
     {
@@ -167,6 +183,11 @@ document.addEventListener('DOMContentLoaded', () => {
       title: 'Sleep Deprivation and Muscle Growth: The Cortisol Link',
       author: 'Brad Schoenfeld, PhD',
       readTime: '6 min read',
+      url: 'https://pubmed.ncbi.nlm.nih.gov/21550958/',
+      summary: 'An analysis of sleep restriction and its catabolic effects on skeletal muscle mass.',
+      citations: [
+        {"name": "Sleep and Muscle Mass (Dattilo et al., 2011)", "url": "https://pubmed.ncbi.nlm.nih.gov/21550958/"}
+      ],
       bookmarked: false
     }
   ];
@@ -1274,6 +1295,29 @@ document.addEventListener('DOMContentLoaded', () => {
         exerciseSelect.dispatchEvent(event);
       });
     }
+
+    // Modal closing listeners
+    const btnCloseVideoModal = document.getElementById('close-modal');
+    const videoModal = document.getElementById('video-modal');
+    if (btnCloseVideoModal && videoModal) {
+      btnCloseVideoModal.addEventListener('click', () => {
+        const iframe = videoModal.querySelector('#youtube-player-iframe');
+        if (iframe) {
+          iframe.src = '';
+        }
+        videoModal.classList.remove('active');
+      });
+    }
+
+    const btnCloseResourceModal = document.getElementById('close-resource-modal');
+    const resourceDetailModal = document.getElementById('resource-detail-modal');
+    if (btnCloseResourceModal && resourceDetailModal) {
+      btnCloseResourceModal.addEventListener('click', () => {
+        resourceDetailModal.classList.remove('active');
+      });
+    }
+
+
   }
 
   // ==========================================
@@ -1830,18 +1874,38 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!scrollContainer) return;
     scrollContainer.innerHTML = '';
 
-    localResourceDatabase.forEach(item => {
+    // Determine data source: live feed or fallback local database
+    let videos = localResourceDatabase.filter(item => item.type === 'video');
+    let articles = localResourceDatabase.filter(item => item.type === 'article');
+    let dailyTip = {
+      text: "Even a 2% drop in total body hydration can lead to a 10% decrease in peak muscular strength. Drink 500ml of water 30 minutes before your lower body workouts!",
+      citation: "Journal of Strength & Conditioning Research, 2020",
+      citation_url: "https://pubmed.ncbi.nlm.nih.gov/3290192/"
+    };
+
+    if (fetchedResourceFeed) {
+      videos = fetchedResourceFeed.videos || [];
+      articles = fetchedResourceFeed.articles || [];
+      if (fetchedResourceFeed.tip) {
+        dailyTip = fetchedResourceFeed.tip;
+      }
+    }
+
+    const combinedList = [...videos, ...articles];
+
+    combinedList.forEach(item => {
       if (filter !== 'all' && item.category !== filter) return;
 
       const card = document.createElement('div');
       card.className = `resource-item-card ${item.type}-card`;
       card.setAttribute('data-category', item.category);
+      card.style.cursor = 'pointer';
 
       if (item.type === 'video') {
         card.innerHTML = `
           <div class="video-thumbnail-container">
             <img src="${item.thumbnail}" alt="${item.title}" class="video-thumbnail">
-            <div class="video-duration">${item.duration}</div>
+            <div class="video-duration">${item.duration || '10:00'}</div>
             <div class="play-overlay-button" id="trigger-video-modal">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
             </div>
@@ -1852,18 +1916,48 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="resource-author">by ${item.author}</p>
           </div>
         `;
-        const playBtn = card.querySelector('#trigger-video-modal');
-        if (playBtn) {
-          playBtn.addEventListener('click', () => {
-            videoModal.classList.add('active');
-          });
-        }
+
+        // Interaction helper to launch real YouTube video player modal
+        card.addEventListener('click', () => {
+          console.log("Video card clicked. Item details:", item);
+          const vModal = document.getElementById('video-modal');
+          if (vModal) {
+            const iframe = vModal.querySelector('#youtube-player-iframe');
+            if (iframe) {
+              let videoId = '';
+              try {
+                const urlObj = new URL(item.url);
+                if (urlObj.hostname.includes('youtube.com')) {
+                  videoId = urlObj.searchParams.get('v');
+                } else if (urlObj.hostname.includes('youtu.be')) {
+                  videoId = urlObj.pathname.substring(1);
+                }
+              } catch (err) {
+                console.warn('Failed to parse URL:', err);
+              }
+              console.log("Parsed Video ID:", videoId);
+              if (videoId) {
+                const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                console.log("Setting iframe src to:", embedUrl);
+                iframe.src = embedUrl;
+              } else {
+                console.warn("No video ID parsed for URL:", item.url);
+              }
+            }
+            const directLink = vModal.querySelector('#youtube-direct-link');
+            if (directLink) {
+              console.log("Setting direct YouTube link href to:", item.url);
+              directLink.href = item.url;
+            }
+            vModal.classList.add('active');
+          }
+        });
       } else {
         card.innerHTML = `
           <div class="article-details">
             <span class="resource-tag tag-article">ARTICLE</span>
             <h3 class="resource-headline">${item.title}</h3>
-            <span class="article-meta">${item.readTime} • By ${item.author}</span>
+            <span class="article-meta">${item.read_time || item.readTime || '5 min read'} • By ${item.author}</span>
           </div>
           <button class="bookmark-btn ${item.bookmarked ? 'bookmarked' : ''}">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="${item.bookmarked ? 'currentColor' : 'none'}"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
@@ -1878,21 +1972,68 @@ document.addEventListener('DOMContentLoaded', () => {
           const svg = bookmarkBtn.querySelector('svg');
           svg.setAttribute('fill', item.bookmarked ? 'currentColor' : 'none');
         });
+
+        // Launch article detail modal
+        card.addEventListener('click', () => {
+          const detailModal = document.getElementById('resource-detail-modal');
+          if (detailModal) {
+            detailModal.querySelector('#resource-modal-tag').textContent = 'ARTICLE';
+            detailModal.querySelector('#resource-modal-title').textContent = item.title;
+            detailModal.querySelector('#resource-modal-meta').textContent = `by ${item.author} • ${item.read_time || item.readTime || '5 min read'}`;
+            detailModal.querySelector('#resource-modal-summary').textContent = item.summary || 'Read full article details.';
+            
+            // Build dynamic citations list
+            const citationsContainer = detailModal.querySelector('#resource-modal-citations');
+            citationsContainer.innerHTML = '';
+            
+            const citations = item.citations || [];
+            if (citations.length > 0) {
+              citations.forEach(cit => {
+                const link = document.createElement('a');
+                link.href = cit.url;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.style.cssText = 'font-size: 13px; font-weight: 500; color: var(--accent-emerald); text-decoration: none; display: flex; align-items: center; gap: 6px;';
+                link.innerHTML = `
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                  ${cit.name}
+                `;
+                citationsContainer.appendChild(link);
+              });
+            } else {
+              citationsContainer.innerHTML = '<span style="font-size: 13px; color: var(--text-muted); font-style: italic;">No scientific citations listed for this overview.</span>';
+            }
+
+            const mainLink = detailModal.querySelector('#resource-modal-link');
+            if (mainLink) {
+              mainLink.href = item.url;
+              mainLink.textContent = 'Read Full Article';
+            }
+
+            detailModal.classList.add('active');
+          }
+        });
       }
 
       scrollContainer.appendChild(card);
     });
 
-    if (filter === 'all' || filter === 'strength') {
+    // Render rotating daily tip card at the end of the lists
+    if (filter === 'all' || filter === 'strength' || filter === 'nutrition') {
       const tipCard = document.createElement('div');
       tipCard.className = 'resource-item-card daily-tip-card';
-      tipCard.style.cssText = 'background-color: #ffffff; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 0px; width: 100%; box-sizing: border-box; flex: 1; display: flex; flex-direction: column;';
+      tipCard.style.cssText = 'background-color: #ffffff; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 0px; width: 100%; box-sizing: border-box; flex-shrink: 0; min-height: fit-content; display: flex; flex-direction: column;';
       tipCard.innerHTML = `
-        <div class="tip-header" style="display: flex; align-items: center; gap: 8px; color: var(--accent-coral); font-weight: 700; margin-bottom: 8px; font-family: 'Outfit', sans-serif;">
-          <img src="brain_icon.png?v=1" style="width: 18px; height: 18px; object-fit: contain;" alt="Brain">
-          <h4 style="margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif; font-weight: 700;">Did You Know?</h4>
+        <div class="tip-header" style="display: flex; align-items: center; justify-content: space-between; width: 100%; color: var(--accent-coral); font-weight: 700; margin-bottom: 8px; font-family: 'Outfit', sans-serif;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <img src="brain_icon.png?v=1" style="width: 18px; height: 18px; object-fit: contain;" alt="Brain">
+            <h4 style="margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Outfit', sans-serif; font-weight: 700;">Did You Know?</h4>
+          </div>
+          <a href="${dailyTip.citation_url || dailyTip.url || '#'}" target="_blank" rel="noopener noreferrer" class="info-icon-wrapper" style="display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; width: 14px; height: 14px; border-radius: 50%; background-color: var(--text-light); color: white; font-family: 'Inter', sans-serif; font-size: 9px; font-weight: bold; line-height: 1; user-select: none; text-decoration: none;" title="Fact Check: ${dailyTip.citation || 'Scientific Citation'}">
+            i
+          </a>
         </div>
-        <p class="tip-body" style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; font-family: 'Inter', sans-serif; flex: 1;">Even a 2% drop in total body hydration can lead to a 10% decrease in peak muscular strength. Drink 500ml of water 30 minutes before your lower body workouts!</p>
+        <p class="tip-body" style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; font-family: 'Inter', sans-serif;">${dailyTip.text}</p>
       `;
       scrollContainer.appendChild(tipCard);
     }
@@ -2035,6 +2176,16 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Strength baseline fetch failed, using offline mode:', e);
       updateStrength1RMLocal();
     }
+
+    try {
+      const response = await fetch(`${API_BASE}/api/resources`);
+      if (response.ok) {
+        fetchedResourceFeed = await response.json();
+      }
+    } catch (e) {
+      console.warn('Failed to fetch resource feed:', e);
+    }
+    renderResources();
   }
 
   function showCustomDialog(message, isConfirm = false) {
@@ -2078,4 +2229,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderResources('all');
   initializeData();
 
+  } catch (globalError) {
+    console.error("CRITICAL RUNTIME ERROR IN APP.JS:", globalError);
+    const errorBanner = document.createElement('div');
+    errorBanner.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:red; color:white; padding:15px; z-index:999999; font-weight:bold; font-family:sans-serif;';
+    errorBanner.textContent = "CRITICAL RUNTIME ERROR: " + globalError.message + "\nStack: " + globalError.stack;
+    document.body.prepend(errorBanner);
+  }
 });

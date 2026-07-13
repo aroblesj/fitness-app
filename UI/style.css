@@ -1984,3 +1984,99 @@ input[type="number"] {
   text-align: left !important;
 }
 
+/* ==========================================
+   SINGLE PAGE VIEW & SCROLLING CONTROLS
+   ========================================== */
+
+/* Constrain page to 100vh viewport */
+body {
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+/* Stretch app container to viewport height */
+.app-container {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  gap: 12px !important;
+}
+
+/* Keep header fixed size */
+.app-header {
+  flex-shrink: 0 !important;
+}
+
+/* Ensure grid matches remaining height */
+.dashboard-grid {
+  flex: 1 !important;
+  min-height: 0 !important;
+  height: calc(100vh - 80px) !important;
+  overflow: hidden !important;
+}
+
+/* Columns height setup */
+.grid-column {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+/* Column 1 (Left Sidebar) Agenda Scrolling */
+.col-calendar {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.agenda-card {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.agenda-content {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+}
+
+/* Column 2 (Middle Feed) General Scrolling for charts/calendars */
+.col-analytics {
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+}
+
+/* Column 3 (Right Sidebar) Resource Hub Card & Scroll */
+.col-resources {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.resource-hub-card {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.resources-scroll-container {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+}
+
+.tip-card {
+  flex-shrink: 0 !important;
+}
+
+

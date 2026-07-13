@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="style.css?v=53">
+  <link rel="stylesheet" href="style.css?v=65">
   <!-- Chart.js CDN for interactive charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons for high-quality standard UI icons -->
@@ -424,13 +424,6 @@
             <h2 class="card-title">Resource & Learning Hub</h2>
           </div>
           
-          <!-- Category Filters -->
-          <div class="resource-filters">
-            <button class="filter-tab active" data-filter="all">All</button>
-            <button class="filter-tab" data-filter="strength">Strength</button>
-            <button class="filter-tab" data-filter="nutrition">Nutrition</button>
-            <button class="filter-tab" data-filter="recovery">Recovery</button>
-          </div>
 
 
 
@@ -497,34 +490,48 @@
 
   <!-- Mock Video Player Modal Overlay -->
   <div class="modal-overlay" id="video-modal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 800px; padding: 20px; border-radius: var(--radius-md);">
       <button class="close-modal-btn" id="close-modal">&times;</button>
-      <div class="video-container">
-        <!-- Mock visual representing a playing video with overlay controls -->
-        <div class="mock-video-playing">
-          <img src="https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80" alt="Playing Video" class="modal-video-bg">
-          <div class="modal-video-controls">
-            <div class="progress-bar-mock">
-              <div class="progress-filled" style="width: 32%"></div>
-            </div>
-            <div class="controls-row">
-              <div class="left-controls">
-                <button class="video-control-btn">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-                </button>
-                <span class="video-time">2:48 / 8:45</span>
-              </div>
-              <span class="video-title-mini">Mastering the Low-Bar Squat</span>
-              <div class="right-controls">
-                <button class="video-control-btn">
-                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                </button>
-                <button class="video-control-btn">
-                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
-                </button>
-              </div>
-            </div>
+      <div class="video-container" style="position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); overflow: hidden;">
+        <iframe id="youtube-player-iframe" src="" style="position: absolute; top:0; left:0; width:100%; height:100%; border:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+      </div>
+      <div style="margin-top: 15px; display: flex; justify-content: center;">
+        <a href="#" id="youtube-direct-link" target="_blank" rel="noopener noreferrer" class="btn-primary" style="text-decoration: none; padding: 10px 20px; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; width: auto; color: white;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="color: white;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Watch directly on YouTube
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resource Detail Modal Overlay -->
+  <div class="modal-overlay" id="resource-detail-modal">
+    <div class="modal-content" style="max-width: 600px; padding: 24px; border-radius: var(--radius-md);">
+      <button class="close-modal-btn" id="close-resource-modal" style="top: 16px; right: 16px;">&times;</button>
+      
+      <div class="resource-modal-body" style="display: flex; flex-direction: column; gap: 16px; text-align: left;">
+        <div>
+          <span class="resource-tag tag-article" id="resource-modal-tag" style="display: inline-block; margin-bottom: 8px;">ARTICLE</span>
+          <h2 class="resource-headline" id="resource-modal-title" style="font-size: 20px; font-weight: 700; margin: 0; line-height: 1.4; color: var(--text-main); font-family: 'Outfit', sans-serif;">Mastering the Low-Bar Squat</h2>
+          <p class="resource-author" id="resource-modal-meta" style="font-size: 13px; color: var(--text-muted); margin: 6px 0 0 0; font-family: 'Inter', sans-serif;">by Dr. Michael Chen</p>
+        </div>
+        
+        <hr style="border: 0; border-top: 1px solid var(--border-light); margin: 0;">
+        
+        <div>
+          <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin: 0 0 8px 0; font-family: 'Outfit', sans-serif;">Curated Summary</h4>
+          <p id="resource-modal-summary" style="font-size: 14px; color: var(--text-muted); line-height: 1.6; margin: 0; font-family: 'Inter', sans-serif;">Detailed breakdown of knee/hip moments in the squat.</p>
+        </div>
+
+        <div>
+          <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin: 0 0 8px 0; font-family: 'Outfit', sans-serif;">Fact Check & Citations</h4>
+          <div id="resource-modal-citations" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Citations will be injected here -->
           </div>
+        </div>
+
+        <div style="margin-top: 8px; display: flex; gap: 12px;">
+          <a href="#" id="resource-modal-link" target="_blank" rel="noopener noreferrer" class="btn-primary" style="flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; height: 42px; font-weight: 600; font-size: 14px; border-radius: var(--radius-sm); box-sizing: border-box;">Read Original Feed</a>
         </div>
       </div>
     </div>
@@ -641,6 +648,6 @@
   </div>
 
   <!-- JavaScript File -->
-  <script src="app.js?v=100"></script>
+  <script src="app.js?v=112"></script>
 </body>
 </html>
